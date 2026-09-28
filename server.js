@@ -1,12 +1,273 @@
-import express from 'express'; import dotenv from 'dotenv'; import Database from 'better-sqlite3';
-dotenv.config(); const app=express(); const port=process.env.PORT||3000; const db=new Database('data/radar.db');
-db.exec(`CREATE TABLE IF NOT EXISTS videos(id TEXT PRIMARY KEY,title TEXT,channel TEXT,region TEXT,thumbnail TEXT,publishedAt TEXT,duration TEXT,views INTEGER,lastSeen INTEGER); CREATE TABLE IF NOT EXISTS snapshots(videoId TEXT,ts INTEGER,views INTEGER,PRIMARY KEY(videoId,ts));`);
+import express from 'express';
+import dotenv from 'dotenv';
+import Database from 'better-sqlite3';
+import fs from 'fs';
+
+dotenv.config();
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// 데이터베이스 폴더가 없으면 자동으로 생성
+fs.mkdirSync('data', { recursive: true });
+
+const db = new Database('data/radar.db');
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS videos(
+  id TEXT PRIMARY KEY,
+  title TEXT,
+  channel TEXT,
+  region TEXT,
+  thumbnail TEXT,
+  publishedAt TEXT,
+  duration TEXT,
+  views INTEGER,
+  lastSeen INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS snapshots(
+  videoId TEXT,
+  ts INTEGER,
+  views INTEGER,
+  PRIMARY KEY(videoId,ts)
+);
+`);
+
 app.use(express.static('public'));
-const regions=['US','KR','JP','GB','IN','BR','DE','FR','CA','AU','MX','ID','TR','ES','IT','NL','PL','SE','NO','DK','FI','PH','TH','VN','MY','SG','TW','HK','AE','SA','ZA','AR','CL','CO','PE','NZ','IE','PT','BE','AT','CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'];
-async function yt(path,params={}){if(!process.env.YOUTUBE_API_KEY)return null;const u=new URL('https://www.googleapis.com/youtube/v3/'+path);Object.entries({...params,key:process.env.YOUTUBE_API_KEY}).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);if(!r.ok)throw new Error(await r.text());return r.json();}
-async function refreshRegion(region){const p=await yt('videos',{part:'snippet,statistics,contentDetails',chart:'mostPopular',regionCode:region,maxResults:'50'});if(!p)return;const now=Date.now();const up=db.prepare(`INSERT INTO videos VALUES(@id,@title,@channel,@region,@thumbnail,@publishedAt,@duration,@views,@lastSeen) ON CONFLICT(id) DO UPDATE SET title=@title,channel=@channel,region=@region,thumbnail=@thumbnail,publishedAt=@publishedAt,duration=@duration,views=@views,lastSeen=@lastSeen`);const snap=db.prepare('INSERT OR REPLACE INTO snapshots VALUES(?,?,?)');const tx=db.transaction(items=>{for(const x of items){const v=Number(x.statistics?.viewCount||0);up.run({id:x.id,title:x.snippet.title,channel:x.snippet.channelTitle,region,thumbnail:x.snippet.thumbnails?.medium?.url||'',publishedAt:x.snippet.publishedAt,duration:x.contentDetails?.duration||'',views:v,lastSeen:now});snap.run(x.id,Math.floor(now/600000)*600000,v)}});tx(p.items||[])}
-function delta(id,views,ms){const cutoff=Date.now()-ms;const s=db.prepare('SELECT views FROM snapshots WHERE videoId=? AND ts<=? ORDER BY ts DESC LIMIT 1').get(id,cutoff);return s?Math.max(0,views-s.views):null}
-app.get('/api/status',(q,r)=>r.json({apiConfigured:!!process.env.YOUTUBE_API_KEY,tracked:db.prepare('SELECT count(*) n FROM videos').get().n}));
-app.post('/api/refresh',express.json(),async(q,r)=>{try{const wanted=q.body?.region?[q.body.region]:regions;for(const x of wanted.slice(0,8))await refreshRegion(x);r.json({ok:true,regions:wanted.slice(0,8)});}catch(e){r.status(500).json({error:e.message})}});
-app.get('/api/rankings',(q,r)=>{let rows=db.prepare('SELECT * FROM videos ORDER BY views DESC LIMIT 5000').all();const region=q.query.region;if(region&&region!=='ALL')rows=rows.filter(x=>x.region===region);const type=q.query.type||'all';rows=rows.map(x=>{const d10=delta(x.id,x.views,10*60000),d1=delta(x.id,x.views,3600000),d6=delta(x.id,x.views,21600000),d24=delta(x.id,x.views,86400000);return {...x,d10,d1,d6,d24,velocity:d1??d10!=null?d10*6:0,isShort:/^PT(?:(?:[0-5]?\d)S|1M(?:[0-0]?\dS)?)$/.test(x.duration)}});if(type==='shorts')rows=rows.filter(x=>x.isShort);if(type==='long')rows=rows.filter(x=>!x.isShort);const metric=q.query.metric||'d1';rows.sort((a,b)=>(b[metric]??-1)-(a[metric]??-1));r.json(rows.slice(0,Math.min(Number(q.query.limit)||100,500)))});
-app.listen(port,()=>console.log(`Global YouTube Radar http://localhost:${port}`));
+
+const regions = [
+  'US','KR','JP','GB','IN','BR','DE','FR','CA','AU',
+  'MX','ID','TR','ES','IT','NL','PL','SE','NO','DK',
+  'FI','PH','TH','VN','MY','SG','TW','HK','AE','SA',
+  'ZA','AR','CL','CO','PE','NZ','IE','PT','BE','AT',
+  'CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'
+];
+
+async function yt(path, params = {}) {
+  if (!process.env.YOUTUBE_API_KEY) return null;
+
+  const u = new URL(
+    'https://www.googleapis.com/youtube/v3/' + path
+  );
+
+  Object.entries({
+    ...params,
+    key: process.env.YOUTUBE_API_KEY
+  }).forEach(([k, v]) => u.searchParams.set(k, v));
+
+  const r = await fetch(u);
+
+  if (!r.ok) {
+    throw new Error(await r.text());
+  }
+
+  return r.json();
+}
+
+async function refreshRegion(region) {
+  const p = await yt('videos', {
+    part: 'snippet,statistics,contentDetails',
+    chart: 'mostPopular',
+    regionCode: region,
+    maxResults: '50'
+  });
+
+  if (!p) return;
+
+  const now = Date.now();
+
+  const up = db.prepare(`
+    INSERT INTO videos
+    VALUES(
+      @id,@title,@channel,@region,@thumbnail,
+      @publishedAt,@duration,@views,@lastSeen
+    )
+    ON CONFLICT(id) DO UPDATE SET
+      title=@title,
+      channel=@channel,
+      region=@region,
+      thumbnail=@thumbnail,
+      publishedAt=@publishedAt,
+      duration=@duration,
+      views=@views,
+      lastSeen=@lastSeen
+  `);
+
+  const snap = db.prepare(
+    'INSERT OR REPLACE INTO snapshots VALUES(?,?,?)'
+  );
+
+  const tx = db.transaction(items => {
+    for (const x of items) {
+      const v = Number(x.statistics?.viewCount || 0);
+
+      up.run({
+        id: x.id,
+        title: x.snippet.title,
+        channel: x.snippet.channelTitle,
+        region,
+        thumbnail:
+          x.snippet.thumbnails?.medium?.url || '',
+        publishedAt: x.snippet.publishedAt,
+        duration: x.contentDetails?.duration || '',
+        views: v,
+        lastSeen: now
+      });
+
+      snap.run(
+        x.id,
+        Math.floor(now / 600000) * 600000,
+        v
+      );
+    }
+  });
+
+  tx(p.items || []);
+}
+
+function delta(id, views, ms) {
+  const cutoff = Date.now() - ms;
+
+  const s = db.prepare(`
+    SELECT views
+    FROM snapshots
+    WHERE videoId=? AND ts<=?
+    ORDER BY ts DESC
+    LIMIT 1
+  `).get(id, cutoff);
+
+  return s
+    ? Math.max(0, views - s.views)
+    : null;
+}
+
+app.get('/api/status', (q, r) => {
+  r.json({
+    apiConfigured: !!process.env.YOUTUBE_API_KEY,
+    tracked:
+      db.prepare('SELECT count(*) n FROM videos').get().n
+  });
+});
+
+app.post(
+  '/api/refresh',
+  express.json(),
+  async (q, r) => {
+    try {
+      const wanted = q.body?.region
+        ? [q.body.region]
+        : regions;
+
+      for (const x of wanted.slice(0, 8)) {
+        await refreshRegion(x);
+      }
+
+      r.json({
+        ok: true,
+        regions: wanted.slice(0, 8)
+      });
+
+    } catch (e) {
+      r.status(500).json({
+        error: e.message
+      });
+    }
+  }
+);
+
+app.get('/api/rankings', (q, r) => {
+
+  let rows = db.prepare(`
+    SELECT *
+    FROM videos
+    ORDER BY views DESC
+    LIMIT 5000
+  `).all();
+
+  const region = q.query.region;
+
+  if (region && region !== 'ALL') {
+    rows = rows.filter(
+      x => x.region === region
+    );
+  }
+
+  const type = q.query.type || 'all';
+
+  rows = rows.map(x => {
+
+    const d10 = delta(
+      x.id,
+      x.views,
+      10 * 60000
+    );
+
+    const d1 = delta(
+      x.id,
+      x.views,
+      3600000
+    );
+
+    const d6 = delta(
+      x.id,
+      x.views,
+      21600000
+    );
+
+    const d24 = delta(
+      x.id,
+      x.views,
+      86400000
+    );
+
+    return {
+      ...x,
+      d10,
+      d1,
+      d6,
+      d24,
+
+      velocity:
+        d1 ??
+        (d10 != null ? d10 * 6 : 0),
+
+      isShort:
+        /^PT(?:(?:[0-5]?\d)S|1M(?:[0-0]?\dS)?)$/
+          .test(x.duration)
+    };
+  });
+
+  if (type === 'shorts') {
+    rows = rows.filter(x => x.isShort);
+  }
+
+  if (type === 'long') {
+    rows = rows.filter(x => !x.isShort);
+  }
+
+  const metric =
+    q.query.metric || 'd1';
+
+  rows.sort(
+    (a, b) =>
+      (b[metric] ?? -1) -
+      (a[metric] ?? -1)
+  );
+
+  r.json(
+    rows.slice(
+      0,
+      Math.min(
+        Number(q.query.limit) || 100,
+        500
+      )
+    )
+  );
+});
+
+app.listen(port, () => {
+  console.log(
+    `Global YouTube Radar running on port ${port}`
+  );
+});
