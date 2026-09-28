@@ -271,3 +271,17 @@ app.listen(port, () => {
     `Global YouTube Radar running on port ${port}`
   );
 });
+// 10분마다 YouTube 조회수 자동 수집
+setInterval(async () => {
+  try {
+    console.log('자동 데이터 수집 시작');
+
+    for (const region of regions.slice(0, 8)) {
+      await refreshRegion(region);
+    }
+
+    console.log('자동 데이터 수집 완료');
+  } catch (error) {
+    console.error('자동 데이터 수집 오류:', error.message);
+  }
+}, 10 * 60 * 1000);
