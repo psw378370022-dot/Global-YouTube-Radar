@@ -1,40 +1,51 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import Database from 'better-sqlite3';
-import fs from 'fs';
+import pg from 'pg';
 
 dotenv.config();
 
+const { Pool } = pg;
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 데이터베이스 폴더가 없으면 자동으로 생성
-fs.mkdirSync('data', { recursive: true });
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL이 설정되지 않았습니다.');
+  process.exit(1);
+}
 
-const db = new Database('data/radar.db');
+const db = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS videos(
-  id TEXT PRIMARY KEY,
-  title TEXT,
-  channel TEXT,
-  region TEXT,
-  thumbnail TEXT,
-  publishedAt TEXT,
-  duration TEXT,
-  views INTEGER,
-  lastSeen INTEGER
-);
+async function initDB() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS videos(
+      id TEXT PRIMARY KEY,
+      title TEXT,
+      channel TEXT,
+      region TEXT,
+      thumbnail TEXT,
+      publishedAt TEXT,
+      duration TEXT,
+      views BIGINT,
+      lastSeen BIGINT
+    )
+  `);
 
-CREATE TABLE IF NOT EXISTS snapshots(
-  videoId TEXT,
-  ts INTEGER,
-  views INTEGER,
-  PRIMARY KEY(videoId,ts)
-);
-`);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS snapshots(
+      videoId TEXT,
+      ts BIGINT,
+      views BIGINT,
+      PRIMARY KEY(videoId, ts)
+    )
+  `);
+
+  console.log('PostgreSQL 데이터베이스 연결 완료');
+}
 
 app.use(express.static('public'));
+app.use(express.json());
 
 const regions = [
   'US','KR','JP','GB','IN','BR','DE','FR','CA','AU',
@@ -47,231 +58,200 @@ const regions = [
 async function yt(path, params = {}) {
   if (!process.env.YOUTUBE_API_KEY) return null;
 
-  const u = new URL(
-    'https://www.googleapis.com/youtube/v3/' + path
-  );
+  const u = new URL('https://www.googleapis.com/youtube/v3/' + path);
 
   Object.entries({
     ...params,
     key: process.env.YOUTUBE_API_KEY
   }).forEach(([k, v]) => u.searchParams.set(k, v));
 
-  const r = await fetch(u);
+  const response = await fetch(u);
 
-  if (!r.ok) {
-    throw new Error(await r.text());
+  if (!response.ok) {
+    throw new Error(await response.text());
   }
 
-  return r.json();
+  return response.json();
 }
 
 async function refreshRegion(region) {
-  const p = await yt('videos', {
+  const data = await yt('videos', {
     part: 'snippet,statistics,contentDetails',
     chart: 'mostPopular',
     regionCode: region,
     maxResults: '50'
   });
 
-  if (!p) return;
+  if (!data) return;
 
   const now = Date.now();
+  const snapshotTime = Math.floor(now / 600000) * 600000;
 
-  const up = db.prepare(`
-    INSERT INTO videos
-    VALUES(
-      @id,@title,@channel,@region,@thumbnail,
-      @publishedAt,@duration,@views,@lastSeen
-    )
-    ON CONFLICT(id) DO UPDATE SET
-      title=@title,
-      channel=@channel,
-      region=@region,
-      thumbnail=@thumbnail,
-      publishedAt=@publishedAt,
-      duration=@duration,
-      views=@views,
-      lastSeen=@lastSeen
-  `);
+  for (const x of data.items || []) {
+    const views = Number(x.statistics?.viewCount || 0);
 
-  const snap = db.prepare(
-    'INSERT OR REPLACE INTO snapshots VALUES(?,?,?)'
-  );
+    await db.query(`
+      INSERT INTO videos
+        (id,title,channel,region,thumbnail,publishedAt,duration,views,lastSeen)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      ON CONFLICT(id) DO UPDATE SET
+        title=EXCLUDED.title,
+        channel=EXCLUDED.channel,
+        region=EXCLUDED.region,
+        thumbnail=EXCLUDED.thumbnail,
+        publishedAt=EXCLUDED.publishedAt,
+        duration=EXCLUDED.duration,
+        views=EXCLUDED.views,
+        lastSeen=EXCLUDED.lastSeen
+    `, [
+      x.id,
+      x.snippet.title,
+      x.snippet.channelTitle,
+      region,
+      x.snippet.thumbnails?.medium?.url || '',
+      x.snippet.publishedAt,
+      x.contentDetails?.duration || '',
+      views,
+      now
+    ]);
 
-  const tx = db.transaction(items => {
-    for (const x of items) {
-      const v = Number(x.statistics?.viewCount || 0);
-
-      up.run({
-        id: x.id,
-        title: x.snippet.title,
-        channel: x.snippet.channelTitle,
-        region,
-        thumbnail:
-          x.snippet.thumbnails?.medium?.url || '',
-        publishedAt: x.snippet.publishedAt,
-        duration: x.contentDetails?.duration || '',
-        views: v,
-        lastSeen: now
-      });
-
-      snap.run(
-        x.id,
-        Math.floor(now / 600000) * 600000,
-        v
-      );
-    }
-  });
-
-  tx(p.items || []);
+    await db.query(`
+      INSERT INTO snapshots(videoId,ts,views)
+      VALUES($1,$2,$3)
+      ON CONFLICT(videoId,ts)
+      DO UPDATE SET views=EXCLUDED.views
+    `, [x.id, snapshotTime, views]);
+  }
 }
 
-function delta(id, views, ms) {
+async function delta(id, views, ms) {
   const cutoff = Date.now() - ms;
 
-  const s = db.prepare(`
+  const result = await db.query(`
     SELECT views
     FROM snapshots
-    WHERE videoId=? AND ts<=?
+    WHERE videoId=$1 AND ts<=$2
     ORDER BY ts DESC
     LIMIT 1
-  `).get(id, cutoff);
+  `, [id, cutoff]);
 
-  return s
-    ? Math.max(0, views - s.views)
-    : null;
+  if (!result.rows.length) return null;
+
+  return Math.max(
+    0,
+    Number(views) - Number(result.rows[0].views)
+  );
 }
 
-app.get('/api/status', (q, r) => {
-  r.json({
-    apiConfigured: !!process.env.YOUTUBE_API_KEY,
-    tracked:
-      db.prepare('SELECT count(*) n FROM videos').get().n
-  });
+app.get('/api/status', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT COUNT(*) AS n FROM videos'
+    );
+
+    res.json({
+      apiConfigured: !!process.env.YOUTUBE_API_KEY,
+      databaseConfigured: !!process.env.DATABASE_URL,
+      tracked: Number(result.rows[0].n)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.post(
-  '/api/refresh',
-  express.json(),
-  async (q, r) => {
-    try {
-      const wanted = q.body?.region
-        ? [q.body.region]
-        : regions;
+app.post('/api/refresh', async (req, res) => {
+  try {
+    const wanted = req.body?.region
+      ? [req.body.region]
+      : regions;
 
-      for (const x of wanted.slice(0, 8)) {
-        await refreshRegion(x);
-      }
-
-      r.json({
-        ok: true,
-        regions: wanted.slice(0, 8)
-      });
-
-    } catch (e) {
-      r.status(500).json({
-        error: e.message
-      });
+    for (const region of wanted.slice(0, 8)) {
+      await refreshRegion(region);
     }
+
+    res.json({
+      ok: true,
+      regions: wanted.slice(0, 8)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
   }
-);
+});
 
-app.get('/api/rankings', (q, r) => {
+app.get('/api/rankings', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT *
+      FROM videos
+      ORDER BY views DESC
+      LIMIT 5000
+    `);
 
-  let rows = db.prepare(`
-    SELECT *
-    FROM videos
-    ORDER BY views DESC
-    LIMIT 5000
-  `).all();
-
-  const region = q.query.region;
-
-  if (region && region !== 'ALL') {
-    rows = rows.filter(
-      x => x.region === region
-    );
-  }
-
-  const type = q.query.type || 'all';
-
-  rows = rows.map(x => {
-
-    const d10 = delta(
-      x.id,
-      x.views,
-      10 * 60000
-    );
-
-    const d1 = delta(
-      x.id,
-      x.views,
-      3600000
-    );
-
-    const d6 = delta(
-      x.id,
-      x.views,
-      21600000
-    );
-
-    const d24 = delta(
-      x.id,
-      x.views,
-      86400000
-    );
-
-    return {
+    let rows = result.rows.map(x => ({
       ...x,
-      d10,
-      d1,
-      d6,
-      d24,
+      views: Number(x.views),
+      lastSeen: Number(x.lastseen)
+    }));
 
-      velocity:
-        d1 ??
-        (d10 != null ? d10 * 6 : 0),
+    const region = req.query.region;
 
-      isShort:
-        /^PT(?:(?:[0-5]?\d)S|1M(?:[0-0]?\dS)?)$/
-          .test(x.duration)
-    };
-  });
+    if (region && region !== 'ALL') {
+      rows = rows.filter(x => x.region === region);
+    }
 
-  if (type === 'shorts') {
-    rows = rows.filter(x => x.isShort);
-  }
+    const type = req.query.type || 'all';
 
-  if (type === 'long') {
-    rows = rows.filter(x => !x.isShort);
-  }
+    rows = await Promise.all(
+      rows.map(async x => {
+        const d10 = await delta(x.id, x.views, 10 * 60000);
+        const d1 = await delta(x.id, x.views, 60 * 60000);
+        const d6 = await delta(x.id, x.views, 6 * 60 * 60000);
+        const d24 = await delta(x.id, x.views, 24 * 60 * 60000);
 
-  const metric =
-    q.query.metric || 'd1';
+        return {
+          ...x,
+          d10,
+          d1,
+          d6,
+          d24,
+          velocity: d1 ?? (d10 != null ? d10 * 6 : 0),
+          isShort:
+            /^PT(?:(?:[0-5]?\d)S|1M(?:[0-0]?\dS)?)$/
+              .test(x.duration)
+        };
+      })
+    );
 
-  rows.sort(
-    (a, b) =>
-      (b[metric] ?? -1) -
-      (a[metric] ?? -1)
-  );
+    if (type === 'shorts') {
+      rows = rows.filter(x => x.isShort);
+    }
 
-  r.json(
-    rows.slice(
-      0,
-      Math.min(
-        Number(q.query.limit) || 100,
-        500
+    if (type === 'long') {
+      rows = rows.filter(x => !x.isShort);
+    }
+
+    const metric = req.query.metric || 'd1';
+
+    rows.sort(
+      (a, b) =>
+        (b[metric] ?? -1) -
+        (a[metric] ?? -1)
+    );
+
+    res.json(
+      rows.slice(
+        0,
+        Math.min(Number(req.query.limit) || 100, 500)
       )
-    )
-  );
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.listen(port, () => {
-  console.log(
-    `Global YouTube Radar running on port ${port}`
-  );
-});
-// 10분마다 YouTube 조회수 자동 수집
+// 10분마다 자동 수집
 setInterval(async () => {
   try {
     console.log('자동 데이터 수집 시작');
@@ -285,3 +265,20 @@ setInterval(async () => {
     console.error('자동 데이터 수집 오류:', error.message);
   }
 }, 10 * 60 * 1000);
+
+async function start() {
+  try {
+    await initDB();
+
+    app.listen(port, () => {
+      console.log(
+        `Global YouTube Radar running on port ${port}`
+      );
+    });
+  } catch (error) {
+    console.error('서버 시작 실패:', error);
+    process.exit(1);
+  }
+}
+
+start();
