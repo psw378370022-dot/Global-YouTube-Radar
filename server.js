@@ -53,7 +53,28 @@ async function initDB() {
       PRIMARY KEY(videoId, ts)
     )
   `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS channels(
+      channel_id TEXT PRIMARY KEY,
+      title TEXT,
+      subscriber_count BIGINT DEFAULT 0,
+      view_count BIGINT DEFAULT 0,
+      video_count BIGINT DEFAULT 0,
+      hidden_subscriber_count BOOLEAN DEFAULT FALSE,
+      last_seen BIGINT
+    )
+  `);
 
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS channel_snapshots(
+      channel_id TEXT,
+      ts BIGINT,
+      subscriber_count BIGINT DEFAULT 0,
+      view_count BIGINT DEFAULT 0,
+      video_count BIGINT DEFAULT 0,
+      PRIMARY KEY(channel_id, ts)
+    )
+  `);
   await db.query(`
     CREATE TABLE IF NOT EXISTS video_regions(
       video_id TEXT,
@@ -183,7 +204,79 @@ async function createSession(res, userId) {
     path: '/'
   });
 }
+async function refreshChannels(channelIds = []) {
+  const ids = [...new Set(channelIds.filter(Boolean))];
+  if (!ids.length) return;
 
+  const now = Date.now();
+
+  for (let i = 0; i < ids.length; i += 50) {
+    const batch = ids.slice(i, i + 50);
+
+    const data = await yt('channels', {
+      part: 'snippet,statistics',
+      id: batch.join(','),
+      maxResults: '50'
+    });
+
+    if (!data?.items) continue;
+
+    for (const channel of data.items) {
+      const stats = channel.statistics || {};
+
+      const subscribers = Number(stats.subscriberCount || 0);
+      const views = Number(stats.viewCount || 0);
+      const videos = Number(stats.videoCount || 0);
+      const hidden = Boolean(stats.hiddenSubscriberCount);
+
+      await db.query(`
+        INSERT INTO channels(
+          channel_id,
+          title,
+          subscriber_count,
+          view_count,
+          video_count,
+          hidden_subscriber_count,
+          last_seen
+        )
+        VALUES($1,$2,$3,$4,$5,$6,$7)
+        ON CONFLICT(channel_id) DO UPDATE SET
+          title = EXCLUDED.title,
+          subscriber_count = EXCLUDED.subscriber_count,
+          view_count = EXCLUDED.view_count,
+          video_count = EXCLUDED.video_count,
+          hidden_subscriber_count = EXCLUDED.hidden_subscriber_count,
+          last_seen = EXCLUDED.last_seen
+      `, [
+        channel.id,
+        channel.snippet?.title || '',
+        subscribers,
+        views,
+        videos,
+        hidden,
+        now
+      ]);
+
+      await db.query(`
+        INSERT INTO channel_snapshots(
+          channel_id,
+          ts,
+          subscriber_count,
+          view_count,
+          video_count
+        )
+        VALUES($1,$2,$3,$4,$5)
+        ON CONFLICT(channel_id, ts) DO NOTHING
+      `, [
+        channel.id,
+        now,
+        subscribers,
+        views,
+        videos
+      ]);
+    }
+  }
+}
 async function refreshRegion(region) {
   if (!regions.includes(region)) return;
 
@@ -199,7 +292,9 @@ async function refreshRegion(region) {
   const now = Date.now();
   const snapshotTime =
     Math.floor(now / 600000) * 600000;
-
+  const channelIds = (data.items || [])
+    .map(x => x.snippet?.channelId)
+    .filter(Boolean);
   for (const x of data.items || []) {
     const views = Number(
       x.statistics?.viewCount || 0
@@ -247,6 +342,7 @@ async function refreshRegion(region) {
       DO UPDATE SET views=EXCLUDED.views
     `, [x.id, snapshotTime, views]);
   }
+  await refreshChannels(channelIds);
 }
 
 async function refreshTrackedVideos() {
@@ -307,6 +403,7 @@ async function refreshTrackedVideos() {
         DO UPDATE SET views=EXCLUDED.views
       `, [x.id, snapshotTime, views]);
     }
+    await refreshChannels((data?.items || []).map(x => x.snippet?.channelId));
   }
 }
 
@@ -516,6 +613,132 @@ app.post('/api/refresh', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+app.get('/api/channel-rankings', async (req, res) => {
+  try {
+    const user = await getUser(req);
+
+    const isPro =
+      user &&
+      user.plan !== 'FREE' &&
+      user.subscription_status === 'active';
+
+    const maxLimit = isPro ? 500 : 100;
+
+    const limit = Math.min(
+      Math.max(Number(req.query.limit) || 100, 1),
+      maxLimit
+    );
+
+    const period =
+      ['d1', 'd6', 'd24', 'd7'].includes(req.query.period)
+        ? req.query.period
+        : 'd24';
+
+    const periodMs = {
+      d1: 60 * 60 * 1000,
+      d6: 6 * 60 * 60 * 1000,
+      d24: 24 * 60 * 60 * 1000,
+      d7: 7 * 24 * 60 * 60 * 1000
+    }[period];
+
+    const result = await db.query(`
+      SELECT
+        c.channel_id,
+        c.title,
+        c.subscriber_count,
+        c.view_count,
+        c.video_count,
+        c.hidden_subscriber_count,
+        c.last_seen,
+
+        COALESCE((
+          SELECT cs.subscriber_count
+          FROM channel_snapshots cs
+          WHERE cs.channel_id = c.channel_id
+            AND cs.ts <= $1
+          ORDER BY cs.ts DESC
+          LIMIT 1
+        ), c.subscriber_count) AS old_subscriber_count,
+
+        COALESCE((
+          SELECT cs.view_count
+          FROM channel_snapshots cs
+          WHERE cs.channel_id = c.channel_id
+            AND cs.ts <= $1
+          ORDER BY cs.ts DESC
+          LIMIT 1
+        ), c.view_count) AS old_view_count
+
+      FROM channels c
+      ORDER BY c.last_seen DESC
+      LIMIT 5000
+    `, [Date.now() - periodMs]);
+
+    const rows = result.rows.map(row => {
+      const subscribers = Number(row.subscriber_count || 0);
+      const oldSubscribers = Number(row.old_subscriber_count || 0);
+
+      const views = Number(row.view_count || 0);
+      const oldViews = Number(row.old_view_count || 0);
+
+      const subscriberGain = Math.max(
+        0,
+        subscribers - oldSubscribers
+      );
+
+      const viewGain = Math.max(
+        0,
+        views - oldViews
+      );
+
+      const subscriberGrowthRate =
+        oldSubscribers > 0
+          ? (subscriberGain / oldSubscribers) * 100
+          : 0;
+
+      const viewsPerSubscriber =
+        subscribers > 0
+          ? viewGain / subscribers
+          : 0;
+
+      return {
+        channelId: row.channel_id,
+        title: row.title,
+        subscribers,
+        subscriberGain,
+        subscriberGrowthRate,
+        totalViews: views,
+        viewGain,
+        videoCount: Number(row.video_count || 0),
+        viewsPerSubscriber,
+        hiddenSubscriberCount: Boolean(
+          row.hidden_subscriber_count
+        ),
+        lastSeen: Number(row.last_seen || 0)
+      };
+    });
+
+    rows.sort((a, b) => {
+      if (b.subscriberGain !== a.subscriberGain) {
+        return b.subscriberGain - a.subscriberGain;
+      }
+
+      return b.subscriberGrowthRate - a.subscriberGrowthRate;
+    });
+
+    res.json({
+      period,
+      limit,
+      items: rows.slice(0, limit)
+    });
+  } catch (error) {
+    console.error(error);
+
     res.status(500).json({
       error: error.message
     });
