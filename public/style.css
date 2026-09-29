@@ -267,6 +267,37 @@ main{
   color:#8d9bb5;
   font-size:13px
 }
+}
+
+/* 영상 / 채널 랭킹 전환 탭 */
+.ranking-tabs{
+  display:flex;
+  gap:10px;
+  margin:22px 0 8px;
+}
+
+.ranking-tab{
+  padding:11px 18px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#0b1019;
+  color:var(--muted);
+  font-weight:700;
+  cursor:pointer;
+  transition:.15s ease;
+}
+
+.ranking-tab:hover{
+  border-color:#4b5870;
+  color:#fff;
+}
+
+.ranking-tab.active{
+  background:#ff4655;
+  border-color:#ff4655;
+  color:#fff;
+}
+
 
 .ranking-head{
   margin:27px 0 8px;
