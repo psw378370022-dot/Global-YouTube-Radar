@@ -1,1 +1,245 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Global YouTube Radar</title><link rel="stylesheet" href="style.css"></head><body><header><div><h1>◉ Global YouTube Radar</h1><p>전 세계 YouTube 조회수 급상승 탐색기</p></div><button id="refresh">데이터 새로고침</button></header><main><section class="controls"><select id="region"><option value="ALL">🌎 전 세계</option><option value="KR">🇰🇷 한국</option><option value="US">🇺🇸 미국</option><option value="JP">🇯🇵 일본</option><option value="GB">🇬🇧 영국</option><option value="IN">🇮🇳 인도</option><option value="BR">🇧🇷 브라질</option><option value="DE">🇩🇪 독일</option><option value="FR">🇫🇷 프랑스</option></select><select id="type"><option value="all">전체 영상</option><option value="shorts">Shorts</option><option value="long">일반 영상</option></select><select id="metric"><option value="d10">최근 10분</option><option value="d1" selected>최근 1시간</option><option value="d6">최근 6시간</option><option value="d24">최근 24시간</option></select><select id="limit"><option>100</option><option>200</option><option>300</option><option>400</option><option>500</option></select><input id="search" placeholder="영상 또는 채널 검색"></section><div id="status"></div><section id="list"></section></main><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="전 세계 YouTube 급상승 영상을 실시간에 가깝게 추적하고 조회수 상승량을 분석합니다.">
+  <title>Global YouTube Radar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>◉ Global YouTube Radar</h1>
+      <p>전 세계 YouTube 조회수 급상승 탐색기</p>
+    </div>
+
+    <div class="account">
+      <span id="planBadge" class="plan-badge">FREE</span>
+      <span id="userName"></span>
+
+      <button id="loginBtn" class="ghost">로그인</button>
+      <button id="signupBtn">무료 회원가입</button>
+      <button id="logoutBtn" class="ghost hidden">로그아웃</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow">GLOBAL TREND INTELLIGENCE</span>
+        <h2>지금 가장 빠르게 뜨는<br>YouTube 영상을 찾아보세요.</h2>
+        <p>
+          국가별 급상승 영상을 추적하고
+          10분 · 1시간 · 6시간 · 24시간 조회수 상승량을 비교합니다.
+        </p>
+      </div>
+
+      <div class="hero-stats">
+        <div>
+          <strong id="trackedCount">-</strong>
+          <span>추적 영상</span>
+        </div>
+        <div>
+          <strong id="countryCount">50</strong>
+          <span>지원 국가</span>
+        </div>
+        <div>
+          <strong>TOP 500</strong>
+          <span>랭킹 분석</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 향후 광고 플랫폼 연결 영역 -->
+    <section class="ad-slot">
+      <span>ADVERTISEMENT</span>
+      <p>무료 이용자용 광고 영역</p>
+    </section>
+
+    <section class="toolbar">
+      <div class="controls">
+        <select id="region">
+          <option value="ALL">🌎 전 세계</option>
+
+          <optgroup label="아시아">
+            <option value="KR">🇰🇷 대한민국</option>
+            <option value="JP">🇯🇵 일본</option>
+            <option value="IN">🇮🇳 인도</option>
+            <option value="ID">🇮🇩 인도네시아</option>
+            <option value="PH">🇵🇭 필리핀</option>
+            <option value="TH">🇹🇭 태국</option>
+            <option value="VN">🇻🇳 베트남</option>
+            <option value="MY">🇲🇾 말레이시아</option>
+            <option value="SG">🇸🇬 싱가포르</option>
+            <option value="TW">🇹🇼 대만</option>
+            <option value="HK">🇭🇰 홍콩</option>
+          </optgroup>
+
+          <optgroup label="북미 · 남미">
+            <option value="US">🇺🇸 미국</option>
+            <option value="CA">🇨🇦 캐나다</option>
+            <option value="MX">🇲🇽 멕시코</option>
+            <option value="BR">🇧🇷 브라질</option>
+            <option value="AR">🇦🇷 아르헨티나</option>
+            <option value="CL">🇨🇱 칠레</option>
+            <option value="CO">🇨🇴 콜롬비아</option>
+            <option value="PE">🇵🇪 페루</option>
+          </optgroup>
+
+          <optgroup label="유럽">
+            <option value="GB">🇬🇧 영국</option>
+            <option value="DE">🇩🇪 독일</option>
+            <option value="FR">🇫🇷 프랑스</option>
+            <option value="ES">🇪🇸 스페인</option>
+            <option value="IT">🇮🇹 이탈리아</option>
+            <option value="NL">🇳🇱 네덜란드</option>
+            <option value="PL">🇵🇱 폴란드</option>
+            <option value="SE">🇸🇪 스웨덴</option>
+            <option value="NO">🇳🇴 노르웨이</option>
+            <option value="DK">🇩🇰 덴마크</option>
+            <option value="FI">🇫🇮 핀란드</option>
+            <option value="IE">🇮🇪 아일랜드</option>
+            <option value="PT">🇵🇹 포르투갈</option>
+            <option value="BE">🇧🇪 벨기에</option>
+            <option value="AT">🇦🇹 오스트리아</option>
+            <option value="CH">🇨🇭 스위스</option>
+            <option value="CZ">🇨🇿 체코</option>
+            <option value="RO">🇷🇴 루마니아</option>
+            <option value="HU">🇭🇺 헝가리</option>
+            <option value="GR">🇬🇷 그리스</option>
+            <option value="TR">🇹🇷 튀르키예</option>
+          </optgroup>
+
+          <optgroup label="중동 · 아프리카">
+            <option value="AE">🇦🇪 아랍에미리트</option>
+            <option value="SA">🇸🇦 사우디아라비아</option>
+            <option value="IL">🇮🇱 이스라엘</option>
+            <option value="EG">🇪🇬 이집트</option>
+            <option value="MA">🇲🇦 모로코</option>
+            <option value="ZA">🇿🇦 남아프리카공화국</option>
+            <option value="NG">🇳🇬 나이지리아</option>
+            <option value="KE">🇰🇪 케냐</option>
+          </optgroup>
+
+          <optgroup label="오세아니아">
+            <option value="AU">🇦🇺 호주</option>
+            <option value="NZ">🇳🇿 뉴질랜드</option>
+          </optgroup>
+        </select>
+
+        <select id="type">
+          <option value="all">전체 영상</option>
+          <option value="shorts">Shorts 추정</option>
+          <option value="long">일반 영상</option>
+        </select>
+
+        <select id="metric">
+          <option value="d10">최근 10분 상승</option>
+          <option value="d1" selected>최근 1시간 상승</option>
+          <option value="d6">최근 6시간 상승</option>
+          <option value="d24">최근 24시간 상승</option>
+          <option value="velocity">상승 속도</option>
+        </select>
+
+        <select id="limit">
+          <option value="100">TOP 100</option>
+          <option value="200">TOP 200</option>
+          <option value="300">TOP 300</option>
+          <option value="400">TOP 400</option>
+          <option value="500">TOP 500</option>
+        </select>
+
+        <input
+          id="search"
+          type="search"
+          placeholder="🔎 영상 또는 채널 검색"
+        >
+
+        <button id="refresh">데이터 새로고침</button>
+      </div>
+    </section>
+
+    <div id="status">데이터를 불러오는 중입니다…</div>
+
+    <section class="ranking-head">
+      <div>
+        <h3>🔥 급상승 랭킹</h3>
+        <p>선택한 기간 동안 조회수가 빠르게 증가한 영상 순위</p>
+      </div>
+    </section>
+
+    <section id="list"></section>
+
+    <section class="upgrade">
+      <div>
+        <span class="eyebrow">GLOBAL YOUTUBE RADAR PRO</span>
+        <h2>더 강력한 분석 기능을 준비하고 있습니다.</h2>
+        <p>
+          향후 고급 분석 · 관심 영상 추적 · 알림 ·
+          추가 데이터 기능을 PRO 요금제로 확장할 수 있습니다.
+        </p>
+      </div>
+
+      <button id="proBtn">PRO 준비 중</button>
+    </section>
+  </main>
+
+  <!-- 로그인 / 회원가입 -->
+  <div id="authModal" class="modal hidden">
+    <div class="modal-card">
+      <button id="closeModal" class="modal-close">×</button>
+
+      <h2 id="authTitle">로그인</h2>
+      <p class="modal-desc">
+        Global YouTube Radar 계정을 이용하세요.
+      </p>
+
+      <input
+        id="nickname"
+        class="auth-field hidden"
+        type="text"
+        maxlength="40"
+        placeholder="닉네임"
+      >
+
+      <input
+        id="email"
+        class="auth-field"
+        type="email"
+        autocomplete="email"
+        placeholder="이메일"
+      >
+
+      <input
+        id="password"
+        class="auth-field"
+        type="password"
+        autocomplete="current-password"
+        placeholder="비밀번호 (8자 이상)"
+      >
+
+      <div id="authMessage"></div>
+
+      <button id="authSubmit" class="auth-submit">로그인</button>
+
+      <button id="authSwitch" class="auth-switch">
+        계정이 없나요? 무료 회원가입
+      </button>
+    </div>
+  </div>
+
+  <footer>
+    <strong>Global YouTube Radar</strong>
+    <span>
+      YouTube 공개 데이터를 활용한 트렌드 분석 서비스
+    </span>
+    <small>
+      Shorts 여부는 공개 API 정보에 기반한 추정값일 수 있습니다.
+    </small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
