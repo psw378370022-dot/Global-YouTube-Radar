@@ -12,6 +12,7 @@ const fmt = n => {
 const els = ['region', 'type', 'metric', 'limit'];
 
 let currentUser = null;
+let rankingMode = 'video';
 let authMode = 'login';
 let loadTimer = null;
 
@@ -222,6 +223,8 @@ async function load() {
   const status = $('#status');
 
   try {
+    if (rankingMode === 'channel') return loadChannels();
+    
     const qs = new URLSearchParams(
       Object.fromEntries(
         els.map(id => [
@@ -260,7 +263,40 @@ async function load() {
     `;
   }
 }
+async function loadChannels() {
+  const status = $('#status');
 
+  try {
+    const limit = $('#limit').value || '100';
+
+    const metric = $('#metric').value;
+    const period =
+      metric === 'd1' ? 'd1' :
+      metric === 'd6' ? 'd6' :
+      metric === 'd24' ? 'd24' :
+      'd24';
+
+    const data = await api(
+      `/api/channel-rankings?period=${period}&limit=${limit}`
+    );
+
+    status.textContent =
+      `${period === 'd1' ? '1시간' :
+        period === 'd6' ? '6시간' :
+        period === 'd7' ? '7일' : '24시간'} 기준 채널 성장 데이터를 분석 중입니다.`;
+
+    renderChannels(data.items || []);
+  } catch (error) {
+    status.textContent =
+      '채널 순위를 불러오지 못했습니다: ' + error.message;
+
+    $('#list').innerHTML = `
+      <div class="empty">
+        채널 성장 데이터를 불러오지 못했습니다.
+      </div>
+    `;
+  }
+}
 function render(rows) {
   const query =
     $('#search').value
@@ -369,7 +405,76 @@ function render(rows) {
     })
     .join('');
 }
+function renderChannels(rows) {
+  const query = $('#search').value
+    .trim()
+    .toLowerCase();
 
+  const filtered = rows.filter(x =>
+    String(x.title || '')
+      .toLowerCase()
+      .includes(query)
+  );
+
+  if (!filtered.length) {
+    $('#list').innerHTML = `
+      <div class="empty">
+        조건에 맞는 채널이 없습니다.
+      </div>
+    `;
+    return;
+  }
+
+  $('#list').innerHTML = filtered
+    .map((x, index) => {
+      const title = escapeHtml(x.title || '채널명 없음');
+      const subscribers = Number(x.subscribers || 0);
+      const subscriberGain = Number(x.subscriberGain || 0);
+      const growthRate = Number(x.subscriberGrowthRate || 0);
+      const totalViews = Number(x.totalViews || 0);
+      const viewGain = Number(x.viewGain || 0);
+      const videoCount = Number(x.videoCount || 0);
+
+      return `
+        <article class="card channel-card">
+          <div class="rank">${index + 1}</div>
+
+          <div class="video-info">
+            <div class="title">${title}</div>
+            <div class="sub">
+              채널 성장 분석 · 영상 ${videoCount.toLocaleString()}개
+            </div>
+          </div>
+
+          <div class="num">
+            <span class="muted">구독자</span>
+            <strong>${subscribers.toLocaleString()}</strong>
+          </div>
+
+          <div class="num">
+            <span class="muted">구독자 증가</span>
+            <strong>+${subscriberGain.toLocaleString()}</strong>
+          </div>
+
+          <div class="num">
+            <span class="muted">성장률</span>
+            <strong>+${growthRate.toFixed(2)}%</strong>
+          </div>
+
+          <div class="num">
+            <span class="muted">조회수 증가</span>
+            <strong>+${viewGain.toLocaleString()}</strong>
+          </div>
+
+          <div class="num">
+            <span class="muted">채널 총조회수</span>
+            <strong>${totalViews.toLocaleString()}</strong>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+}
 function scheduleLoad() {
   clearTimeout(loadTimer);
 
@@ -378,7 +483,43 @@ function scheduleLoad() {
     250
   );
 }
+$('#videoTab').addEventListener('click', () => {
+  rankingMode = 'video';
 
+  $('#videoTab').classList.add('active');
+  $('#channelTab').classList.remove('active');
+
+  $('#rankingTitle').textContent = '🔥 영상 급상승 랭킹';
+
+  load();
+});
+
+$('#channelTab').addEventListener('click', () => {
+  rankingMode = 'channel';
+
+  $('#channelTab').classList.add('active');
+  $('#videoTab').classList.remove('active');
+
+  $('#rankingTitle').textContent = '🚀 채널 급성장 랭킹';
+
+  load();
+});
+$('#limit').addEventListener('change', () => {
+  const selected = Number($('#limit').value);
+
+  const isPro =
+    currentUser &&
+    currentUser.plan !== 'FREE' &&
+    currentUser.subscription_status === 'active';
+
+  if (selected > 100 && !isPro) {
+    alert(
+      'TOP 200~500은 PRO 기능입니다. FREE 회원은 TOP 100까지 이용할 수 있습니다.'
+    );
+
+    $('#limit').value = '100';
+  }
+});
 els.forEach(id => {
   $('#' + id).addEventListener(
     'change',
