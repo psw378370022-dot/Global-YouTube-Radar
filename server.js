@@ -524,6 +524,8 @@ app.post('/api/refresh', async (req, res) => {
 
 app.get('/api/rankings', async (req, res) => {
   try {
+    const user = await getUser(req);
+    
     const region =
       String(req.query.region || 'ALL');
 
@@ -533,12 +535,19 @@ app.get('/api/rankings', async (req, res) => {
         ? req.query.metric
         : 'd1';
 
+       const isPro =
+      user &&
+      user.plan !== 'FREE' &&
+      user.subscription_status === 'active';
+
+    const maxLimit = isPro ? 500 : 100;
+
     const limit = Math.min(
       Math.max(
         Number(req.query.limit) || 100,
         1
       ),
-      500
+      maxLimit
     );
 
     const params = [];
