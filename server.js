@@ -251,14 +251,24 @@ app.get('/api/rankings', async (req, res) => {
   }
 });
 
-// 10분마다 자동 수집
+// // 10분마다 국가를 8개씩 순환하며 자동 수집
+let regionIndex = 0;
+
 setInterval(async () => {
   try {
-    console.log('자동 데이터 수집 시작');
+    const batch = [];
 
-    for (const region of regions.slice(0, 8)) {
+    for (let i = 0; i < 8; i++) {
+      batch.push(regions[(regionIndex + i) % regions.length]);
+    }
+
+    console.log('자동 수집 국가:', batch.join(', '));
+
+    for (const region of batch) {
       await refreshRegion(region);
     }
+
+    regionIndex = (regionIndex + 8) % regions.length;
 
     console.log('자동 데이터 수집 완료');
   } catch (error) {
