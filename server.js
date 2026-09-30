@@ -578,7 +578,28 @@ app.post('/api/auth/login', async (req, res) => {
           '이메일 또는 비밀번호가 올바르지 않습니다.'
       });
     }
+    await createSession(res, user.id);
 
+    const responseUser = {
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      plan: user.plan,
+      subscription_status: user.subscription_status
+    };
+
+    if (
+      OWNER_EMAIL &&
+      String(user.email).toLowerCase() === OWNER_EMAIL
+    ) {
+      responseUser.plan = 'OWNER';
+      responseUser.subscription_status = 'active';
+    }
+
+    res.json({
+      ok: true,
+      user: responseUser
+    });
 
   } catch (error) {
     console.error(error);
