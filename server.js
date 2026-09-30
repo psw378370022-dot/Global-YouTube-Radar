@@ -10,6 +10,10 @@ const { Pool } = pg;
 const app = express();
 const port = process.env.PORT || 3000;
 
+const OWNER_EMAIL = String(
+  process.env.OWNER_EMAIL || ''
+).trim().toLowerCase();
+
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL이 설정되지 않았습니다.');
   process.exit(1);
@@ -27,7 +31,8 @@ const regions = [
   'MX','ID','TR','ES','IT','NL','PL','SE','NO','DK',
   'FI','PH','TH','VN','MY','SG','TW','HK','AE','SA',
   'ZA','AR','CL','CO','PE','NZ','IE','PT','BE','AT',
-  'CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'
+ 32
+ 33  'CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'
 ];
 
 async function initDB() {
@@ -184,9 +189,82 @@ async function getUser(req) {
     LIMIT 1
   `, [hashToken(token)]);
 
-  return result.rows[0] || null;
+  const user = result.rows[0] || null;
+
+  if (!user) return null;
+
+  if (
+    OWNER_EMAIL &&
+    String(user.email).toLowerCase() === OWNER_EMAIL
+  ) {
+    user.plan = 'OWNER';
+    user.subscription_status = 'active';
+  }
+
+  return user;
+}
+function getPlanAccess(user) {
+  const plan = String(user?.plan || 'FREE').toUpperCase();
+  const active = user?.subscription_status === 'active';
+
+  if (plan === 'OWNER') {
+    return {
+      plan: 'OWNER',
+      maxLimit: 500,
+      minPeriodMinutes: 10
+    };
+  }
+
+  if (!active) {
+    return {
+      plan: 'FREE',
+      maxLimit: 100,
+      minPeriodMinutes: 1440
+    };
+  }
+
+  if (plan === 'BUSINESS') {
+    return {
+      plan: 'BUSINESS',
+      maxLimit: 500,
+      minPeriodMinutes: 10
+    };
+  }
+
+  if (plan === 'PRO_PLUS') {
+    return {
+      plan: 'PRO_PLUS',
+      maxLimit: 500,
+      minPeriodMinutes: 60
+    };
+  }
+
+  if (plan === 'PRO') {
+    return {
+      plan: 'PRO',
+      maxLimit: 500,
+      minPeriodMinutes: 360
+    };
+  }
+
+  return {
+    plan: 'FREE',
+    maxLimit: 100,
+    minPeriodMinutes: 1440
+  };
 }
 
+function canUsePeriod(access, period) {
+  const minutes = {
+    d10: 10,
+    d1: 60,
+    d6: 360,
+    d24: 1440,
+    d7: 10080
+  }[period];
+
+  return minutes >= access.minPeriodMinutes;
+}
 async function createSession(res, userId) {
   const token = crypto.randomBytes(32).toString('hex');
   const tokenHash = hashToken(token);
@@ -440,7 +518,7 @@ app.post('/api/auth/register', async (req, res) => {
         email,password_hash,nickname
       )
       VALUES($1,$2,$3)
-      RETURNING id,email,nickname,plan
+     RETURNING id,email,nickname,plan,subscription_status
     `, [
       email,
       passwordHash,
@@ -502,17 +580,7 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    await createSession(res, user.id);
 
-    res.json({
-      ok: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        nickname: user.nickname,
-        plan: user.plan
-      }
-    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -622,22 +690,21 @@ app.get('/api/channel-rankings', async (req, res) => {
   try {
     const user = await getUser(req);
 
-    const isPro =
-      user &&
-      user.plan !== 'FREE' &&
-      user.subscription_status === 'active';
+    const access = getPlanAccess(user);
 
-    const maxLimit = isPro ? 500 : 100;
+const limit = Math.min(
+  Math.max(Number(req.query.limit) || 100, 1),
+  access.maxLimit
+);
 
-    const limit = Math.min(
-      Math.max(Number(req.query.limit) || 100, 1),
-      maxLimit
-    );
+const requestedPeriod =
+  ['d1', 'd6', 'd24', 'd7'].includes(req.query.period)
+    ? req.query.period
+    : 'd24';
 
-    const period =
-      ['d1', 'd6', 'd24', 'd7'].includes(req.query.period)
-        ? req.query.period
-        : 'd24';
+const period = canUsePeriod(access, requestedPeriod)
+  ? requestedPeriod
+  : 'd24';
 
     const periodMs = {
       d1: 60 * 60 * 1000,
@@ -752,26 +819,30 @@ app.get('/api/rankings', async (req, res) => {
     const region =
       String(req.query.region || 'ALL');
 
-    const metric =
-      ['d10','d1','d6','d24','velocity']
-        .includes(req.query.metric)
-        ? req.query.metric
-        : 'd1';
+   const requestedMetric =
+  ['d10', 'd1', 'd6', 'd24', 'velocity']
+    .includes(req.query.metric)
+    ? req.query.metric
+    : 'd24';
 
-       const isPro =
-      user &&
-      user.plan !== 'FREE' &&
-      user.subscription_status === 'active';
+const access = getPlanAccess(user);
 
-    const maxLimit = isPro ? 500 : 100;
+const metricPeriod =
+  requestedMetric === 'velocity'
+    ? 'd1'
+    : requestedMetric;
 
-    const limit = Math.min(
-      Math.max(
-        Number(req.query.limit) || 100,
-        1
-      ),
-      maxLimit
-    );
+const metric = canUsePeriod(access, metricPeriod)
+  ? requestedMetric
+  : 'd24';
+
+const limit = Math.min(
+  Math.max(
+    Number(req.query.limit) || 100,
+    1
+  ),
+  access.maxLimit
+);
 
     const params = [];
     let regionJoin = '';
