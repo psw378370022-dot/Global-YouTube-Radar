@@ -31,8 +31,7 @@ const regions = [
   'MX','ID','TR','ES','IT','NL','PL','SE','NO','DK',
   'FI','PH','TH','VN','MY','SG','TW','HK','AE','SA',
   'ZA','AR','CL','CO','PE','NZ','IE','PT','BE','AT',
- 32
- 33  'CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'
+  'CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'
 ];
 
 async function initDB() {
