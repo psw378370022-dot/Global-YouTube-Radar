@@ -268,27 +268,48 @@ async function loadChannels() {
 
   try {
     const limit = $('#limit').value || '100';
+    const metric = $('#metric').value || 'd24';
 
-    const metric = $('#metric').value;
+    const periodMap = {
+      d10: 'd10',
+      d1: 'd1',
+      d6: 'd6',
+      d24: 'd24',
+      d3: 'd3',
+      d7: 'd7'
+    };
+
     const period =
-      metric === 'd1' ? 'd1' :
-      metric === 'd6' ? 'd6' :
-      metric === 'd24' ? 'd24' :
-      'd24';
+      periodMap[metric] || 'd24';
+
+    const sort =
+      `${period}_subscribers`;
 
     const data = await api(
-      `/api/channel-rankings?period=${period}&limit=${limit}`
+      `/api/channel-rankings?sort=${encodeURIComponent(sort)}&limit=${encodeURIComponent(limit)}`
     );
 
-    status.textContent =
-      `${period === 'd1' ? '1시간' :
-        period === 'd6' ? '6시간' :
-        period === 'd7' ? '7일' : '24시간'} 기준 채널 성장 데이터를 분석 중입니다.`;
+    const periodLabels = {
+      d10: '10분',
+      d1: '1시간',
+      d6: '6시간',
+      d24: '24시간',
+      d3: '3일',
+      d7: '7일'
+    };
 
-    renderChannels(data.items || []);
+    status.textContent =
+      `${periodLabels[period]} 기준 채널 성장 데이터를 분석 중입니다.`;
+
+    renderChannels(
+      data.items || [],
+      period
+    );
+
   } catch (error) {
     status.textContent =
-      '채널 순위를 불러오지 못했습니다: ' + error.message;
+      '채널 순위를 불러오지 못했습니다: ' +
+      error.message;
 
     $('#list').innerHTML = `
       <div class="empty">
