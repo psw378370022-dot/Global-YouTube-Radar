@@ -810,6 +810,64 @@ app.get('/api/channel-rankings', async (req, res) => {
         items: []
       });
     }
+    // TOP 500 채널의 대표 카테고리를 한 번에 계산
+const categoryVideosResult = await db.query(`
+  SELECT
+    channel_id,
+    category_id,
+    title,
+    channel
+  FROM videos
+  WHERE channel_id = ANY($1::text[])
+    AND category_id IS NOT NULL
+    AND category_id <> ''
+  ORDER BY lastSeen DESC
+  LIMIT 5000
+`, [channelIds]);
+
+const channelCategoryCounts = new Map();
+
+for (const video of categoryVideosResult.rows) {
+  const category = getSimpleCategory(
+    video.category_id,
+    video.title,
+    video.channel
+  );
+
+  if (!channelCategoryCounts.has(video.channel_id)) {
+    channelCategoryCounts.set(
+      video.channel_id,
+      new Map()
+    );
+  }
+
+  const counts =
+    channelCategoryCounts.get(video.channel_id);
+
+  counts.set(
+    category,
+    (counts.get(category) || 0) + 1
+  );
+}
+
+const channelCategoryMap = new Map();
+
+for (const [channelId, counts] of channelCategoryCounts) {
+  let bestCategory = 'entertainment';
+  let bestCount = 0;
+
+  for (const [category, count] of counts) {
+    if (count > bestCount) {
+      bestCategory = category;
+      bestCount = count;
+    }
+  }
+
+  channelCategoryMap.set(
+    channelId,
+    bestCategory
+  );
+}
 
     // 500채널의 필요한 과거 스냅샷을 한 번에 가져온다.
     const snapshotsResult = await db.query(`
@@ -900,7 +958,7 @@ app.get('/api/channel-rankings', async (req, res) => {
       };
     }
 
-    const rows = channelsResult.rows.map(row => {
+    let rows = channelsResult.rows.map(row => {
       const subscribers =
         Number(row.subscriber_count || 0);
 
@@ -956,6 +1014,7 @@ app.get('/api/channel-rankings', async (req, res) => {
       return {
         channelId: row.channel_id,
         title: row.title,
+        category: channelCategoryMap.get(row.channel_id) || 'entertainment',
 
         subscribers,
         totalViews,
@@ -986,6 +1045,14 @@ app.get('/api/channel-rankings', async (req, res) => {
         }
       };
     });
+    const category =
+  String(req.query.category || 'all');
+
+if (category !== 'all') {
+  rows = rows.filter(
+    x => x.category === category
+  );
+}
 
     const sortMap = {
       d10_subscribers: x => x.d10.subscriberGain,
