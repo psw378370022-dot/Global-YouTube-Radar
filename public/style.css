@@ -821,3 +821,193 @@ footer small{
     width:100%;
   }
 }
+/* =================================
+   CHANNEL TOP 500 RANKING TABLE
+================================= */
+
+.channel-ranking-table{
+  width:100%;
+  overflow-x:auto;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#0b1019;
+}
+
+.channel-ranking-row{
+  display:grid;
+  grid-template-columns:
+    55px
+    minmax(190px,1.7fr)
+    125px
+    90px
+    90px
+    90px
+    100px
+    100px
+    145px
+    90px
+    170px
+    90px;
+
+  align-items:center;
+  min-width:1350px;
+  border-bottom:1px solid var(--line);
+}
+
+.channel-ranking-row:last-child{
+  border-bottom:0;
+}
+
+.channel-ranking-row > div{
+  padding:14px 10px;
+}
+
+.channel-ranking-header{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#111827;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:700;
+}
+
+.channel-ranking-header > div{
+  white-space:nowrap;
+}
+
+.channel-rank{
+  text-align:center;
+  font-size:17px;
+  font-weight:800;
+}
+
+.channel-name-cell{
+  min-width:0;
+}
+
+.channel-name-cell strong{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+}
+
+.channel-number{
+  text-align:right;
+  white-space:nowrap;
+  font-size:12px;
+  font-weight:700;
+}
+
+.channel-growth{
+  text-align:right;
+  white-space:nowrap;
+  color:#65e6a5;
+  font-size:12px;
+  font-weight:800;
+}
+
+.channel-revenue{
+  text-align:right;
+  white-space:nowrap;
+  font-size:11px;
+  font-weight:700;
+}
+
+.channel-ranking-row:hover:not(.channel-ranking-header){
+  background:#0f1724;
+}
+
+.channel-ranking-row .channel-analysis-btn{
+  margin:0;
+  width:100%;
+}
+
+
+/* =================================
+   TABLE SCROLLBAR
+================================= */
+
+.channel-ranking-table::-webkit-scrollbar{
+  height:10px;
+}
+
+.channel-ranking-table::-webkit-scrollbar-track{
+  background:#080d15;
+}
+
+.channel-ranking-table::-webkit-scrollbar-thumb{
+  background:#263349;
+  border-radius:999px;
+}
+
+
+/* =================================
+   MOBILE CHANNEL RANKING
+================================= */
+
+@media(max-width:700px){
+
+  .channel-ranking-table{
+    overflow:visible;
+    border:0;
+    background:transparent;
+  }
+
+  .channel-ranking-header{
+    display:none;
+  }
+
+  .channel-ranking-row{
+    display:grid;
+    grid-template-columns:
+      42px
+      1fr
+      1fr;
+
+    min-width:0;
+    margin-bottom:12px;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#0b1019;
+  }
+
+  .channel-ranking-row > div{
+    padding:7px;
+  }
+
+  .channel-rank{
+    grid-row:1 / 4;
+    align-self:start;
+    padding-top:10px !important;
+  }
+
+  .channel-name-cell{
+    grid-column:2 / 4;
+  }
+
+  .channel-name-cell strong{
+    font-size:14px;
+  }
+
+  .channel-number,
+  .channel-growth,
+  .channel-revenue{
+    text-align:left;
+    font-size:11px;
+  }
+
+  .channel-growth::before{
+    display:block;
+    margin-bottom:3px;
+    color:var(--muted);
+    font-size:9px;
+  }
+
+  .channel-ranking-row .channel-analysis-btn{
+    min-height:36px;
+  }
+}
