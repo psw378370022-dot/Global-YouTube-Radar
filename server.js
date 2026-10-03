@@ -1283,15 +1283,17 @@ const limit = Math.min(
 
     const result = await db.query(`
       SELECT
-        v.id,
-        v.title,
-        v.channel,
-        v.region,
-        v.thumbnail,
-        v.publishedAt AS "publishedAt",
-        v.duration,
-        v.views,
-        v.lastSeen AS "lastSeen",
+  v.id,
+  v.title,
+  v.channel,
+  v.channel_id,
+  v.region,
+  v.thumbnail,
+  v.publishedAt AS "publishedAt",
+  v.duration,
+  v.category_id,
+  v.views,
+  v.lastSeen AS "lastSeen",
 
         GREATEST(
           0,
@@ -1387,8 +1389,16 @@ GREATEST(
       const d7 = Number(x.d7);
 
       return {
-        ...x,
-        views: Number(x.views),
+  ...x,
+  views: Number(x.views),
+
+  channelId: x.channel_id || '',
+  category: getSimpleCategory(
+    x.category_id,
+    x.title,
+    x.channel
+  ),
+        
         lastSeen: Number(x.lastSeen),
         d10,
         d1,
@@ -1414,6 +1424,14 @@ GREATEST(
     if (type === 'long') {
       rows = rows.filter(x => !x.isShort);
     }
+    const category =
+  String(req.query.category || 'all');
+
+if (category !== 'all') {
+  rows = rows.filter(
+    x => x.category === category
+  );
+}
 
     rows.sort(
       (a, b) =>
