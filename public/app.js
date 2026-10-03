@@ -1092,7 +1092,11 @@ $('#proBtn').addEventListener(
 
 async function start() {
   $('#category')?.classList.add('hidden');
-  
+
+  if ($('#category')) {
+    $('#category').value = 'all';
+  }
+
   await loadUser();
   await load();
 }
