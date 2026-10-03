@@ -275,7 +275,6 @@ async function loadChannels() {
       d1: 'd1',
       d6: 'd6',
       d24: 'd24',
-      d3: 'd3',
       d7: 'd7'
     };
 
@@ -294,7 +293,6 @@ async function loadChannels() {
       d1: '1시간',
       d6: '6시간',
       d24: '24시간',
-      d3: '3일',
       d7: '7일'
     };
 
@@ -423,7 +421,6 @@ function render(rows) {
       $('#metric').value === 'd10' ? '10분' :
       $('#metric').value === 'd1' ? '1시간' :
       $('#metric').value === 'd6' ? '6시간' :
-      $('#metric').value === 'd3' ? '3일' :
       $('#metric').value === 'd7' ? '7일' :
       $('#metric').value === 'velocity' ? '상승 속도' :
       '24시간'
@@ -455,7 +452,6 @@ function renderChannels(rows, period = 'd24') {
     d1: '1시간',
     d6: '6시간',
     d24: '24시간',
-    d3: '3일',
     d7: '7일'
   };
 
@@ -665,7 +661,6 @@ async function openChannelAnalysis(channelId) {
       d1: '1시간',
       d6: '6시간',
       d24: '24시간',
-      d3: '3일',
       d7: '7일'
     };
 
