@@ -950,7 +950,7 @@ app.get('/api/rankings', async (req, res) => {
       String(req.query.region || 'ALL');
 
    const requestedMetric =
-  ['d10', 'd1', 'd6', 'd24', 'velocity']
+  ['d10', 'd1', 'd6', 'd24', 'd3', 'd7', 'velocity']
     .includes(req.query.metric)
     ? req.query.metric
     : 'd24';
@@ -1049,7 +1049,32 @@ const limit = Math.min(
             ORDER BY s.ts DESC
             LIMIT 1
           ),v.views)
-        ) AS d24
+        ) AS d24,
+        GREATEST(
+  0,
+  v.views - COALESCE((
+    SELECT s.views
+    FROM snapshots s
+    WHERE s.videoId=v.id
+      AND s.ts <=
+        (EXTRACT(EPOCH FROM NOW())*1000 - 259200000)
+    ORDER BY s.ts DESC
+    LIMIT 1
+  ),v.views)
+) AS d3,
+
+GREATEST(
+  0,
+  v.views - COALESCE((
+    SELECT s.views
+    FROM snapshots s
+    WHERE s.videoId=v.id
+      AND s.ts <=
+        (EXTRACT(EPOCH FROM NOW())*1000 - 604800000)
+    ORDER BY s.ts DESC
+    LIMIT 1
+  ),v.views)
+) AS d7
 
       FROM videos v
       ${regionJoin}
@@ -1076,6 +1101,8 @@ const limit = Math.min(
       const d1 = Number(x.d1);
       const d6 = Number(x.d6);
       const d24 = Number(x.d24);
+      const d3 = Number(x.d3);
+      const d7 = Number(x.d7);
 
       return {
         ...x,
@@ -1085,6 +1112,8 @@ const limit = Math.min(
         d1,
         d6,
         d24,
+        d3,
+        d7,
         velocity:
           d1 || d10 * 6,
         // YouTube API에는 정확한 Shorts 여부 필드가 없어 추정값
