@@ -226,13 +226,18 @@ async function load() {
     if (rankingMode === 'channel') return loadChannels();
     
     const qs = new URLSearchParams(
-      Object.fromEntries(
-        els.map(id => [
-          id,
-          $('#' + id).value
-        ])
-      )
-    );
+  Object.fromEntries(
+    els
+      .map(id => {
+        const element = $('#' + id);
+
+        return element
+          ? [id, element.value]
+          : null;
+      })
+      .filter(Boolean)
+  )
+);
 
     const [st, rows] = await Promise.all([
       api('/api/status'),
