@@ -332,7 +332,7 @@ main{
     55px
     155px
     minmax(220px,1fr)
-    repeat(5,minmax(80px,105px));
+    repeat(6,minmax(80px,105px));
   gap:12px;
   align-items:center;
   padding:12px;
@@ -891,13 +891,13 @@ footer small{
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  font-size:13px;
+  font-size:15px;
 }
 
 .channel-number{
   text-align:right;
   white-space:nowrap;
-  font-size:12px;
+  font-size:14px;
   font-weight:700;
 }
 
@@ -905,14 +905,14 @@ footer small{
   text-align:right;
   white-space:nowrap;
   color:#65e6a5;
-  font-size:12px;
+  font-size:14px;
   font-weight:800;
 }
 
 .channel-revenue{
   text-align:right;
   white-space:nowrap;
-  font-size:11px;
+  font-size:14px;
   font-weight:700;
 }
 
@@ -997,7 +997,7 @@ footer small{
   .channel-growth,
   .channel-revenue{
     text-align:left;
-    font-size:11px;
+    font-size:13px;
   }
 
   .channel-growth::before{
