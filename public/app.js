@@ -419,35 +419,22 @@ function render(rows) {
             <span class="muted">6시간</span>
             <strong>+${fmt(x.d6)}</strong>
           </div>
+    
+        <div class="num">
+  <span class="muted">24시간</span>
+  <strong>+${fmt(x.d24)}</strong>
+</div>
 
-         <div class="num">
-  <span class="muted">
-    ${
-      $('#metric').value === 'd10' ? '10분' :
-      $('#metric').value === 'd1' ? '1시간' :
-      $('#metric').value === 'd6' ? '6시간' :
-      $('#metric').value === 'd7' ? '7일' :
-      $('#metric').value === 'velocity' ? '상승 속도' :
-      '24시간'
-    }
-  </span>
-
-  <strong>
-    +${fmt(
-      x[
-        $('#metric').value === 'velocity'
-          ? 'velocity'
-          : $('#metric').value
-      ]
-    )}
-  </strong>
+<div class="num">
+  <span class="muted">7일</span>
+  <strong>+${fmt(x.d7)}</strong>
 </div>
         </article>
       `;
     })
     .join('');
 }
-async function openChannelAnalysis(channelId) {
+
   function renderChannels(rows, period = 'd24') {
   const query = $('#search').value
     .trim()
@@ -598,169 +585,18 @@ async function openChannelAnalysis(channelId) {
       });
     });
 }
-  const query = $('#search').value
-    .trim()
-    .toLowerCase();
-
-  const periodLabels = {
-    d10: '10분',
-    d1: '1시간',
-    d6: '6시간',
-    d24: '24시간',
-    d7: '7일'
-  };
-
-  const filtered = rows.filter(x =>
-    String(x.title || '')
-      .toLowerCase()
-      .includes(query)
-  );
-
-  if (!filtered.length) {
-    $('#list').innerHTML = `
-      <div class="empty">
-        조건에 맞는 채널이 없습니다.
-      </div>
-    `;
-    return;
-  }
-
-  $('#list').innerHTML = filtered
-    .map((x, index) => {
-      const title =
-        escapeHtml(x.title || '채널명 없음');
-
-      const subscribers =
-        Number(x.subscribers || 0);
-
-      const totalViews =
-        Number(x.totalViews || 0);
-
-      const videoCount =
-        Number(x.videoCount || 0);
-
-      const periodData =
-        x[period] || {};
-
-      const subscriberGain =
-        Number(periodData.subscriberGain || 0);
-
-      const growthRate =
-        Number(periodData.subscriberGrowthRate || 0);
-
-      const viewGain =
-        Number(periodData.viewGain || 0);
-
-      const revenueMin =
-        Number(
-          x.estimatedMonthlyRevenue?.min || 0
-        );
-
-      const revenueMax =
-        Number(
-          x.estimatedMonthlyRevenue?.max || 0
-        );
-
-      const dataStatus =
-        periodData.available
-          ? ''
-          : ' · 데이터 축적 중';
-
-      return `
-        <article class="card channel-card">
-          <div class="rank">
-            ${index + 1}
-          </div>
-
-        <div class="video-info">
-  <div class="title">
-    ${title}
-  </div>
-
-  <div class="sub">
-    ${periodLabels[period]} 성장 분석
-    · 영상 ${videoCount.toLocaleString()}개
-    ${dataStatus}
-  </div>
-
-  <button
-    type="button"
-    class="channel-analysis-btn"
-    data-channel-id="${escapeHtml(x.channelId || '')}"
-  >
-    🔎 상세 분석
-  </button>
-</div>
-
-          <div class="num">
-            <span class="muted">
-              총 구독자
-            </span>
-            <strong>
-              ${subscribers.toLocaleString()}
-            </strong>
-          </div>
-
-          <div class="num">
-            <span class="muted">
-              구독자 증가
-            </span>
-            <strong class="hot">
-              +${subscriberGain.toLocaleString()}
-            </strong>
-          </div>
-
-          <div class="num">
-            <span class="muted">
-              성장률
-            </span>
-            <strong>
-              +${growthRate.toFixed(2)}%
-            </strong>
-          </div>
-
-          <div class="num">
-            <span class="muted">
-              조회수 증가
-            </span>
-            <strong>
-              +${viewGain.toLocaleString()}
-            </strong>
-          </div>
-
-          <div class="num">
-            <span class="muted">
-              총 조회수
-            </span>
-            <strong>
-              ${totalViews.toLocaleString()}
-            </strong>
-          </div>
-
-          <div class="num">
-            <span class="muted">
-              추정 월수익
-            </span>
-            <strong>
-              $${revenueMin.toLocaleString()}
-              ~
-              $${revenueMax.toLocaleString()}
-            </strong>
-          </div>
-        </article>
-      `;
-    })
-    .join('');
-   document
-    .querySelectorAll('.channel-analysis-btn')
-    .forEach(button => {
-      button.addEventListener('click', () => {
-        openChannelAnalysis(
-          button.dataset.channelId
-        );
-      });
+document
+  .querySelectorAll('.channel-analysis-btn')
+  .forEach(button => {
+    button.addEventListener('click', () => {
+      openChannelAnalysis(
+        button.dataset.channelId
+      );
     });
+  });
 }
+
+async function openChannelAnalysis(channelId) {
 
 async function openChannelAnalysis(channelId) {
   const section = $('#channelAnalysis');
