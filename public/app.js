@@ -777,13 +777,18 @@ $('#videoTab').addEventListener('click', () => {
   $('#channelTab').classList.remove('active');
   
 
-  $('#rankingTitle').textContent = '🔥 영상 급상승 랭킹';
+  $('#rankingTitle').textContent =
+  '🔥 영상 급상승 랭킹';
+
+$('#rankingDescription').textContent =
+  '선택한 기간 동안 조회수가 빠르게 증가한 영상 순위';
 
   load();
 });
 
 $('#channelTab').addEventListener('click', () => {
   rankingMode = 'channel';
+  $('#category').value = 'all';
   $('#category').classList.add('hidden');
 
   $('#channelTab').classList.add('active');
@@ -791,7 +796,10 @@ $('#channelTab').addEventListener('click', () => {
   $('#videoTab').classList.remove('active');
 
   $('#rankingTitle').textContent =
-    '🚀 채널 급성장 랭킹';
+  '🚀 채널 급성장 랭킹';
+
+$('#rankingDescription').textContent =
+  '10분·1시간·6시간·24시간·7일 채널 성장 데이터를 비교합니다.';
 
   load();
 });
@@ -805,7 +813,10 @@ $('#categoryTab').addEventListener('click', () => {
   $('#channelTab').classList.remove('active');
 
   $('#rankingTitle').textContent =
-    '📂 카테고리 분석 랭킹';
+  '📂 카테고리 분석 랭킹';
+
+$('#rankingDescription').textContent =
+  '카테고리를 선택해 급상승 YouTube 영상을 분석합니다.';
 
   load();
 });
