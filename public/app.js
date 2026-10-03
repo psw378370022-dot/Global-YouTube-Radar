@@ -287,11 +287,14 @@ async function loadChannels() {
       periodMap[metric] || 'd24';
 
     const sort =
-      `${period}_subscribers`;
+  `${period}_subscribers`;
 
-    const data = await api(
-      `/api/channel-rankings?sort=${encodeURIComponent(sort)}&limit=${encodeURIComponent(limit)}`
-    );
+const category =
+  $('#category')?.value || 'all';
+
+const data = await api(
+  `/api/channel-rankings?sort=${encodeURIComponent(sort)}&limit=${encodeURIComponent(limit)}&category=${encodeURIComponent(category)}`
+);
 
     const periodLabels = {
       d10: '10분',
