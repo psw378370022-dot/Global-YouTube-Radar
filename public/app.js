@@ -769,9 +769,13 @@ function scheduleLoad() {
 }
 $('#videoTab').addEventListener('click', () => {
   rankingMode = 'video';
+  $('#category').classList.add('hidden');
+  $('#category').value = 'all';
 
   $('#videoTab').classList.add('active');
+  $('#categoryTab').classList.remove('active');
   $('#channelTab').classList.remove('active');
+  
 
   $('#rankingTitle').textContent = '🔥 영상 급상승 랭킹';
 
@@ -780,11 +784,28 @@ $('#videoTab').addEventListener('click', () => {
 
 $('#channelTab').addEventListener('click', () => {
   rankingMode = 'channel';
+  $('#category').classList.add('hidden');
 
   $('#channelTab').classList.add('active');
+  $('#categoryTab').classList.remove('active');
   $('#videoTab').classList.remove('active');
 
-  $('#rankingTitle').textContent = '🚀 채널 급성장 랭킹';
+  $('#rankingTitle').textContent =
+    '🚀 채널 급성장 랭킹';
+
+  load();
+});
+
+$('#categoryTab').addEventListener('click', () => {
+  rankingMode = 'category';
+  $('#category').classList.remove('hidden');
+
+  $('#categoryTab').classList.add('active');
+  $('#videoTab').classList.remove('active');
+  $('#channelTab').classList.remove('active');
+
+  $('#rankingTitle').textContent =
+    '📂 카테고리 분석 랭킹';
 
   load();
 });
@@ -944,6 +965,8 @@ $('#proBtn').addEventListener(
 );
 
 async function start() {
+  $('#category')?.classList.add('hidden');
+  
   await loadUser();
   await load();
 }
