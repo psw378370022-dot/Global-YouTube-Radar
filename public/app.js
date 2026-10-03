@@ -63,6 +63,7 @@ function updateAccount() {
   const signupBtn = $('#signupBtn');
   const logoutBtn = $('#logoutBtn');
   const liveTab = $('#liveTab');
+  const specialAdminBtn = $('#specialAdminBtn');
 
   if (currentUser) {
     const plan = currentUser.plan || 'FREE';
@@ -90,6 +91,10 @@ liveTab.classList.toggle(
   !canUseLive
 );
 
+    specialAdminBtn.classList.toggle(
+  'hidden',
+  plan !== 'OWNER'
+);
 } else {
     planBadge.textContent = 'FREE';
     planBadge.classList.remove('pro');
@@ -101,6 +106,7 @@ liveTab.classList.toggle(
     logoutBtn.classList.add('hidden');
     
     liveTab.classList.add('hidden');
+    specialAdminBtn.classList.add('hidden');
   }
 }
 
@@ -953,7 +959,70 @@ $('#logoutBtn').addEventListener(
   'click',
   logout
 );
+$('#specialAdminBtn').addEventListener('click', () => {
+  $('#specialModal').classList.remove('hidden');
+  $('#specialMessage').textContent = '';
+  $('#specialEmail').value = '';
+});
 
+$('#closeSpecialModal').addEventListener('click', () => {
+  $('#specialModal').classList.add('hidden');
+});
+
+$('#specialModal').addEventListener('click', event => {
+  if (event.target === $('#specialModal')) {
+    $('#specialModal').classList.add('hidden');
+  }
+});
+async function updateSpecialAccess(enabled) {
+  const email =
+    $('#specialEmail').value
+      .trim()
+      .toLowerCase();
+
+  const message = $('#specialMessage');
+
+  if (!email || !email.includes('@')) {
+    message.textContent =
+      '회원 이메일을 입력해주세요.';
+    return;
+  }
+
+  try {
+    const data = await api(
+      '/api/admin/special-access',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          enabled
+        })
+      }
+    );
+
+    message.textContent =
+      data.user?.special_access
+        ? '✅ SPECIAL 권한을 켰습니다.'
+        : '✅ SPECIAL 권한을 해제했습니다.';
+
+  } catch (error) {
+    message.textContent =
+      error.message;
+  }
+}
+
+$('#specialEnable').addEventListener(
+  'click',
+  () => updateSpecialAccess(true)
+);
+
+$('#specialDisable').addEventListener(
+  'click',
+  () => updateSpecialAccess(false)
+);
 $('#closeModal').addEventListener(
   'click',
   closeAuth
