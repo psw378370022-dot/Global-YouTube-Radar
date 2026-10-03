@@ -1011,3 +1011,11 @@ footer small{
     min-height:36px;
   }
 }
+.channel-category{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:500;
+  white-space:nowrap;
+}
