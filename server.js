@@ -780,7 +780,65 @@ app.get('/api/auth/me', async (req, res) => {
     });
   }
 });
+app.post('/api/admin/special-access', async (req, res) => {
+  try {
+    const user = await getUser(req);
 
+    if (
+      !user ||
+      String(user.plan || '').toUpperCase() !== 'OWNER'
+    ) {
+      return res.status(403).json({
+        error: 'OWNER만 특수회원 권한을 변경할 수 있습니다.'
+      });
+    }
+
+    const email =
+      String(req.body?.email || '')
+        .trim()
+        .toLowerCase();
+
+    const enabled =
+      req.body?.enabled === true;
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: '올바른 이메일을 입력해주세요.'
+      });
+    }
+
+    const result = await db.query(`
+      UPDATE users
+      SET special_access = $1
+      WHERE LOWER(email) = $2
+      RETURNING
+        id,
+        email,
+        nickname,
+        plan,
+        subscription_status,
+        special_access
+    `, [enabled, email]);
+
+    if (!result.rows[0]) {
+      return res.status(404).json({
+        error: '해당 회원을 찾을 수 없습니다.'
+      });
+    }
+
+    res.json({
+      ok: true,
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: '특수회원 권한 변경 중 오류가 발생했습니다.'
+    });
+  }
+});
 app.get('/api/status', async (req, res) => {
   try {
     const result = await db.query(
