@@ -426,10 +426,19 @@ function render(rows) {
     })
     .join('');
 }
-function renderChannels(rows) {
+function renderChannels(rows, period = 'd24') {
   const query = $('#search').value
     .trim()
     .toLowerCase();
+
+  const periodLabels = {
+    d10: '10분',
+    d1: '1시간',
+    d6: '6시간',
+    d24: '24시간',
+    d3: '3일',
+    d7: '7일'
+  };
 
   const filtered = rows.filter(x =>
     String(x.title || '')
@@ -448,48 +457,117 @@ function renderChannels(rows) {
 
   $('#list').innerHTML = filtered
     .map((x, index) => {
-      const title = escapeHtml(x.title || '채널명 없음');
-      const subscribers = Number(x.subscribers || 0);
-      const subscriberGain = Number(x.subscriberGain || 0);
-      const growthRate = Number(x.subscriberGrowthRate || 0);
-      const totalViews = Number(x.totalViews || 0);
-      const viewGain = Number(x.viewGain || 0);
-      const videoCount = Number(x.videoCount || 0);
+      const title =
+        escapeHtml(x.title || '채널명 없음');
+
+      const subscribers =
+        Number(x.subscribers || 0);
+
+      const totalViews =
+        Number(x.totalViews || 0);
+
+      const videoCount =
+        Number(x.videoCount || 0);
+
+      const periodData =
+        x[period] || {};
+
+      const subscriberGain =
+        Number(periodData.subscriberGain || 0);
+
+      const growthRate =
+        Number(periodData.subscriberGrowthRate || 0);
+
+      const viewGain =
+        Number(periodData.viewGain || 0);
+
+      const revenueMin =
+        Number(
+          x.estimatedMonthlyRevenue?.min || 0
+        );
+
+      const revenueMax =
+        Number(
+          x.estimatedMonthlyRevenue?.max || 0
+        );
+
+      const dataStatus =
+        periodData.available
+          ? ''
+          : ' · 데이터 축적 중';
 
       return `
         <article class="card channel-card">
-          <div class="rank">${index + 1}</div>
+          <div class="rank">
+            ${index + 1}
+          </div>
 
           <div class="video-info">
-            <div class="title">${title}</div>
+            <div class="title">
+              ${title}
+            </div>
+
             <div class="sub">
-              채널 성장 분석 · 영상 ${videoCount.toLocaleString()}개
+              ${periodLabels[period]} 성장 분석
+              · 영상 ${videoCount.toLocaleString()}개
+              ${dataStatus}
             </div>
           </div>
 
           <div class="num">
-            <span class="muted">구독자</span>
-            <strong>${subscribers.toLocaleString()}</strong>
+            <span class="muted">
+              총 구독자
+            </span>
+            <strong>
+              ${subscribers.toLocaleString()}
+            </strong>
           </div>
 
           <div class="num">
-            <span class="muted">구독자 증가</span>
-            <strong>+${subscriberGain.toLocaleString()}</strong>
+            <span class="muted">
+              구독자 증가
+            </span>
+            <strong class="hot">
+              +${subscriberGain.toLocaleString()}
+            </strong>
           </div>
 
           <div class="num">
-            <span class="muted">성장률</span>
-            <strong>+${growthRate.toFixed(2)}%</strong>
+            <span class="muted">
+              성장률
+            </span>
+            <strong>
+              +${growthRate.toFixed(2)}%
+            </strong>
           </div>
 
           <div class="num">
-            <span class="muted">조회수 증가</span>
-            <strong>+${viewGain.toLocaleString()}</strong>
+            <span class="muted">
+              조회수 증가
+            </span>
+            <strong>
+              +${viewGain.toLocaleString()}
+            </strong>
           </div>
 
           <div class="num">
-            <span class="muted">채널 총조회수</span>
-            <strong>${totalViews.toLocaleString()}</strong>
+            <span class="muted">
+              총 조회수
+            </span>
+            <strong>
+              ${totalViews.toLocaleString()}
+            </strong>
+          </div>
+
+          <div class="num">
+            <span class="muted">
+              추정 월수익
+            </span>
+            <strong>
+              $${revenueMin.toLocaleString()}
+              ~
+              $${revenueMax.toLocaleString()}
+            </strong>
           </div>
         </article>
       `;
