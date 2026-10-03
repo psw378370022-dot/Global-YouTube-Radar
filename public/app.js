@@ -521,17 +521,25 @@ function renderChannels(rows, period = 'd24') {
             ${index + 1}
           </div>
 
-          <div class="video-info">
-            <div class="title">
-              ${title}
-            </div>
+        <div class="video-info">
+  <div class="title">
+    ${title}
+  </div>
 
-            <div class="sub">
-              ${periodLabels[period]} 성장 분석
-              · 영상 ${videoCount.toLocaleString()}개
-              ${dataStatus}
-            </div>
-          </div>
+  <div class="sub">
+    ${periodLabels[period]} 성장 분석
+    · 영상 ${videoCount.toLocaleString()}개
+    ${dataStatus}
+  </div>
+
+  <button
+    type="button"
+    class="channel-analysis-btn"
+    data-channel-id="${escapeHtml(x.channelId || '')}"
+  >
+    🔎 상세 분석
+  </button>
+</div>
 
           <div class="num">
             <span class="muted">
@@ -592,7 +600,155 @@ function renderChannels(rows, period = 'd24') {
       `;
     })
     .join('');
+   document
+    .querySelectorAll('.channel-analysis-btn')
+    .forEach(button => {
+      button.addEventListener('click', () => {
+        openChannelAnalysis(
+          button.dataset.channelId
+        );
+      });
+    });
 }
+
+async function openChannelAnalysis(channelId) {
+  const section = $('#channelAnalysis');
+
+  try {
+    section.classList.remove('hidden');
+
+    $('#analysisTitle').textContent =
+      '🔎 채널 데이터를 불러오는 중...';
+
+    $('#analysisDescription').textContent =
+      '성장 기록을 분석하고 있습니다.';
+
+    const data = await api(
+      `/api/channel-analysis/${encodeURIComponent(channelId)}`
+    );
+
+    $('#analysisTitle').textContent =
+      `🔎 ${data.title || '채널 상세 분석'}`;
+
+    $('#analysisDescription').textContent =
+      '10분부터 7일까지 채널 성장 데이터를 비교합니다.';
+
+    $('#analysisSubscribers').textContent =
+      Number(data.subscribers || 0).toLocaleString();
+
+    $('#analysisViews').textContent =
+      Number(data.totalViews || 0).toLocaleString();
+
+    $('#analysisVideos').textContent =
+      Number(data.videoCount || 0).toLocaleString();
+
+    $('#analysisMonthlyViews').textContent =
+      Number(
+        data.estimatedMonthlyViews || 0
+      ).toLocaleString();
+
+    const revenueMin =
+      Number(
+        data.estimatedMonthlyRevenue?.min || 0
+      );
+
+    const revenueMax =
+      Number(
+        data.estimatedMonthlyRevenue?.max || 0
+      );
+
+    $('#analysisRevenue').textContent =
+      `$${revenueMin.toLocaleString()} ~ $${revenueMax.toLocaleString()}`;
+
+    const labels = {
+      d10: '10분',
+      d1: '1시간',
+      d6: '6시간',
+      d24: '24시간',
+      d3: '3일',
+      d7: '7일'
+    };
+
+    $('#analysisPeriods').innerHTML =
+      Object.entries(labels)
+        .map(([key, label]) => {
+          const item =
+            data.growth?.[key] || {};
+
+          const subscriberGain =
+            Number(item.subscriberGain || 0);
+
+          const growthRate =
+            Number(
+              item.subscriberGrowthRate || 0
+            );
+
+          const viewGain =
+            Number(item.viewGain || 0);
+
+          const status =
+            item.available
+              ? ''
+              : '<span class="analysis-pending">데이터 축적 중</span>';
+
+          return `
+            <div class="analysis-period">
+              <div class="analysis-period-title">
+                <strong>${label}</strong>
+                ${status}
+              </div>
+
+              <div class="analysis-period-value">
+                <span>구독자 증가</span>
+                <strong>
+                  +${subscriberGain.toLocaleString()}
+                </strong>
+              </div>
+
+              <div class="analysis-period-value">
+                <span>구독자 성장률</span>
+                <strong>
+                  +${growthRate.toFixed(2)}%
+                </strong>
+              </div>
+
+              <div class="analysis-period-value">
+                <span>조회수 증가</span>
+                <strong>
+                  +${viewGain.toLocaleString()}
+                </strong>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+
+    section.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+
+  } catch (error) {
+    section.classList.remove('hidden');
+
+    $('#analysisTitle').textContent =
+      '채널 분석을 불러오지 못했습니다.';
+
+    $('#analysisDescription').textContent =
+      error.message;
+
+    $('#analysisPeriods').innerHTML = '';
+  }
+}
+
+function closeChannelAnalysis() {
+  $('#channelAnalysis').classList.add('hidden');
+}
+$('#closeAnalysis').addEventListener(
+  'click',
+  closeChannelAnalysis
+);
+
 function scheduleLoad() {
   clearTimeout(loadTimer);
 
