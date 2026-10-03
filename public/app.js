@@ -62,7 +62,7 @@ function updateAccount() {
   const loginBtn = $('#loginBtn');
   const signupBtn = $('#signupBtn');
   const logoutBtn = $('#logoutBtn');
-  const liveTab = $('#liveTab');
+ 
   const specialAdminBtn = $('#specialAdminBtn');
 
   if (currentUser) {
@@ -82,11 +82,6 @@ function updateAccount() {
     signupBtn.classList.add('hidden');
     logoutBtn.classList.remove('hidden');
 
-const canUseLive =
-  plan === 'OWNER' ||
-  currentUser.special_access === true;
-
-liveTab.classList.toggle(
   'hidden',
   !canUseLive
 );
@@ -105,7 +100,7 @@ liveTab.classList.toggle(
     signupBtn.classList.remove('hidden');
     logoutBtn.classList.add('hidden');
     
-    liveTab.classList.add('hidden');
+    
     specialAdminBtn.classList.add('hidden');
   }
 }
@@ -794,7 +789,7 @@ $('#videoTab').addEventListener('click', () => {
   $('#videoTab').classList.add('active');
   $('#categoryTab').classList.remove('active');
   $('#channelTab').classList.remove('active');
-  $('#liveTab').classList.remove('active');
+  
 
   $('#rankingTitle').textContent =
   '🔥 영상 급상승 랭킹';
@@ -813,7 +808,7 @@ $('#channelTab').addEventListener('click', () => {
   $('#channelTab').classList.add('active');
   $('#categoryTab').classList.remove('active');
   $('#videoTab').classList.remove('active');
-  $('#liveTab').classList.remove('active');
+  
 
   $('#rankingTitle').textContent =
   '🚀 채널 급성장 랭킹';
@@ -831,7 +826,7 @@ $('#categoryTab').addEventListener('click', () => {
   $('#categoryTab').classList.add('active');
   $('#videoTab').classList.remove('active');
   $('#channelTab').classList.remove('active');
-  $('#liveTab').classList.remove('active');
+  
 
   $('#rankingTitle').textContent =
   '📂 카테고리 분석 랭킹';
@@ -841,38 +836,7 @@ $('#rankingDescription').textContent =
 
   load();
 });
-$('#liveTab').addEventListener('click', () => {
-  const canUseLive =
-    currentUser &&
-    (
-      String(currentUser.plan || '').toUpperCase() === 'OWNER' ||
-      currentUser.special_access === true
-    );
 
-  if (!canUseLive) return;
-
-  rankingMode = 'live';
-
-  $('#category').classList.add('hidden');
-  $('#category').value = 'all';
-
-  $('#liveTab').classList.add('active');
-  $('#videoTab').classList.remove('active');
-  $('#channelTab').classList.remove('active');
-  $('#categoryTab').classList.remove('active');
-
-  $('#rankingTitle').textContent =
-    '🎙️ 인터넷방송 분석';
-
-  $('#rankingDescription').textContent =
-    '스트리머·버튜버·라이브·방송 클립 데이터를 분석합니다.';
-
-  $('#list').innerHTML = `
-    <div class="empty">
-      인터넷방송 분석 데이터를 준비하고 있습니다.
-    </div>
-  `;
-});
 els.forEach(id => {
   const element = $('#' + id);
 
