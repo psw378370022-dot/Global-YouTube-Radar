@@ -930,10 +930,14 @@ $('#channelTab').addEventListener('click', () => {
 });
 
 els.forEach(id => {
-  $('#' + id).addEventListener(
-    'change',
-    load
-  );
+  const element = $('#' + id);
+
+  if (element) {
+    element.addEventListener(
+      'change',
+      load
+    );
+  }
 });
 const limitSelect = $('#limit');
 
