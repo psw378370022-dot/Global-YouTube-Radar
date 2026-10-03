@@ -86,11 +86,42 @@ function getSimpleCategory(categoryId, title = '', channel = '') {
 }
 
   // 세부 카테고리는 제목/채널명으로 먼저 보정
-  if (
-    /주식|재테크|경제|투자|금융|증시|코인|비트코인|부동산|etf|금리|환율|채권|배당|나스닥|코스피|코스닥|세금|창업|사업|자산관리|펀드|연금|finance|stock|stocks|crypto|bitcoin|invest|investment|nasdaq|bond|dividend|tax|startup|business|fund|pension/
-  ) {
-    return 'economy';
-  }
+  const economyKoreanSignals = [
+  '주식',
+  '재테크',
+  '경제',
+  '투자',
+  '금융',
+  '증시',
+  '코인',
+  '비트코인',
+  '부동산',
+  '금리',
+  '환율',
+  '채권',
+  '배당',
+  '나스닥',
+  '코스피',
+  '코스닥',
+  '세금',
+  '창업',
+  '자산관리',
+  '펀드',
+  '연금'
+];
+
+const hasEconomyKorean =
+  economyKoreanSignals.some(
+    signal => text.includes(signal)
+  );
+
+const hasEconomyEnglish =
+  /\b(etf|finance|stocks?|crypto|bitcoin|invest|investment|nasdaq|bonds?|dividend|tax|startup|pension)\b/i
+    .test(text);
+
+if (hasEconomyKorean || hasEconomyEnglish) {
+  return 'economy';
+}
   
   if (
   /뉴스|속보|시사|정치|사회|국제|세계|외교|사건|사고|날씨|재난|선거|국회|정부|대통령|기자|방송|보도|현장|인터뷰|news|breaking|politics|world|global|election|government|report/.test(text)
