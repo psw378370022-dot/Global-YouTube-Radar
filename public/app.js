@@ -62,6 +62,7 @@ function updateAccount() {
   const loginBtn = $('#loginBtn');
   const signupBtn = $('#signupBtn');
   const logoutBtn = $('#logoutBtn');
+  const liveTab = $('#liveTab');
 
   if (currentUser) {
     const plan = currentUser.plan || 'FREE';
@@ -79,7 +80,17 @@ function updateAccount() {
     loginBtn.classList.add('hidden');
     signupBtn.classList.add('hidden');
     logoutBtn.classList.remove('hidden');
-  } else {
+
+const canUseLive =
+  plan === 'OWNER' ||
+  currentUser.special_access === true;
+
+liveTab.classList.toggle(
+  'hidden',
+  !canUseLive
+);
+
+} else {
     planBadge.textContent = 'FREE';
     planBadge.classList.remove('pro');
 
@@ -88,6 +99,8 @@ function updateAccount() {
     loginBtn.classList.remove('hidden');
     signupBtn.classList.remove('hidden');
     logoutBtn.classList.add('hidden');
+    
+    liveTab.classList.add('hidden');
   }
 }
 
