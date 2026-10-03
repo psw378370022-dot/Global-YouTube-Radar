@@ -417,10 +417,29 @@ function render(rows) {
             <strong>+${fmt(x.d6)}</strong>
           </div>
 
-          <div class="num">
-            <span class="muted">24시간</span>
-            <strong>+${fmt(x.d24)}</strong>
-          </div>
+         <div class="num">
+  <span class="muted">
+    ${
+      $('#metric').value === 'd10' ? '10분' :
+      $('#metric').value === 'd1' ? '1시간' :
+      $('#metric').value === 'd6' ? '6시간' :
+      $('#metric').value === 'd3' ? '3일' :
+      $('#metric').value === 'd7' ? '7일' :
+      $('#metric').value === 'velocity' ? '상승 속도' :
+      '24시간'
+    }
+  </span>
+
+  <strong>
+    +${fmt(
+      x[
+        $('#metric').value === 'velocity'
+          ? 'velocity'
+          : $('#metric').value
+      ]
+    )}
+  </strong>
+</div>
         </article>
       `;
     })
