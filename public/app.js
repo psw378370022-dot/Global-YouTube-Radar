@@ -585,18 +585,6 @@ function render(rows) {
       });
     });
 }
-document
-  .querySelectorAll('.channel-analysis-btn')
-  .forEach(button => {
-    button.addEventListener('click', () => {
-      openChannelAnalysis(
-        button.dataset.channelId
-      );
-    });
-  });
-}
-
-async function openChannelAnalysis(channelId) {
 
 async function openChannelAnalysis(channelId) {
   const section = $('#channelAnalysis');
