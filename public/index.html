@@ -21,6 +21,9 @@
 
       <button id="loginBtn" class="ghost">로그인</button>
       <button id="signupBtn">무료 회원가입</button>
+      <button id="specialAdminBtn" class="ghost hidden">
+  🔐 특수회원 관리
+</button>
       <button id="logoutBtn" class="ghost hidden">로그아웃</button>
     </div>
   </header>
@@ -297,7 +300,36 @@
       </button>
     </div>
   </div>
+<!-- OWNER 전용 SPECIAL 회원 관리 -->
+<div id="specialModal" class="modal hidden">
+  <div class="modal-card">
+    <button id="closeSpecialModal" class="modal-close">×</button>
 
+    <h2>🔐 SPECIAL 회원 관리</h2>
+
+    <p class="modal-desc">
+      인터넷방송 전용 권한을 회원에게 부여하거나 해제합니다.
+    </p>
+
+    <input
+      id="specialEmail"
+      class="auth-field"
+      type="email"
+      placeholder="회원 이메일"
+      autocomplete="off"
+    >
+
+    <div id="specialMessage"></div>
+
+    <button id="specialEnable" class="auth-submit" type="button">
+      SPECIAL 권한 켜기
+    </button>
+
+    <button id="specialDisable" type="button">
+      SPECIAL 권한 해제
+    </button>
+  </div>
+</div>
   <footer>
     <strong>Global YouTube Radar</strong>
     <span>
