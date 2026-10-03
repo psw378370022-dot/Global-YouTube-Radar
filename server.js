@@ -709,59 +709,135 @@ app.post('/api/refresh', async (req, res) => {
 app.get('/api/channel-rankings', async (req, res) => {
   try {
     const user = await getUser(req);
-
-    // 권한 제한은 기존 구조를 유지한다.
-    // 요금제별 세부 권한은 기능 완성 후 마지막에 정리한다.
     const access = getPlanAccess(user);
 
     const limit = Math.min(
       Math.max(Number(req.query.limit) || 100, 1),
-      access.maxLimit
+      Math.min(access.maxLimit, 500)
     );
+
+    const sort =
+      String(req.query.sort || 'd24_subscribers');
+
+    const now = Date.now();
+
+    // 랭킹 후보는 최대 500채널만 계산한다.
+    const channelsResult = await db.query(`
+      SELECT
+        channel_id,
+        title,
+        subscriber_count,
+        view_count,
+        video_count,
+        hidden_subscriber_count,
+        last_seen
+      FROM channels
+      ORDER BY last_seen DESC
+      LIMIT 500
+    `);
+
+    const channelIds =
+      channelsResult.rows.map(row => row.channel_id);
+
+    if (!channelIds.length) {
+      return res.json({
+        limit,
+        sort,
+        periods: ['d10', 'd1', 'd6', 'd24', 'd7'],
+        items: []
+      });
+    }
+
+    // 500채널의 필요한 과거 스냅샷을 한 번에 가져온다.
+    const snapshotsResult = await db.query(`
+      SELECT
+        channel_id,
+        ts,
+        subscriber_count,
+        view_count,
+        video_count
+      FROM channel_snapshots
+      WHERE channel_id = ANY($1::text[])
+        AND ts >= $2
+      ORDER BY channel_id, ts DESC
+    `, [
+      channelIds,
+      now - 8 * 24 * 60 * 60 * 1000
+    ]);
+
+    const snapshotsByChannel = new Map();
+
+    for (const snapshot of snapshotsResult.rows) {
+      if (!snapshotsByChannel.has(snapshot.channel_id)) {
+        snapshotsByChannel.set(
+          snapshot.channel_id,
+          []
+        );
+      }
+
+      snapshotsByChannel
+        .get(snapshot.channel_id)
+        .push(snapshot);
+    }
 
     const periods = {
       d10: 10 * 60 * 1000,
       d1: 60 * 60 * 1000,
       d6: 6 * 60 * 60 * 1000,
       d24: 24 * 60 * 60 * 1000,
-      d3: 3 * 24 * 60 * 60 * 1000,
       d7: 7 * 24 * 60 * 60 * 1000
     };
 
-    const result = await db.query(`
-      SELECT
-        c.channel_id,
-        c.title,
-        c.subscriber_count,
-        c.view_count,
-        c.video_count,
-        c.hidden_subscriber_count,
-        c.last_seen
-      FROM channels c
-      ORDER BY c.last_seen DESC
-      LIMIT 5000
-    `);
+    function getPeriodData(
+      snapshots,
+      cutoff,
+      subscribers,
+      totalViews
+    ) {
+      let old = null;
 
-    async function getSnapshot(channelId, cutoff) {
-      const snapshot = await db.query(`
-        SELECT
-          subscriber_count,
-          view_count,
-          video_count,
-          ts
-        FROM channel_snapshots
-        WHERE channel_id = $1
-          AND ts <= $2
-        ORDER BY ts DESC
-        LIMIT 1
-      `, [channelId, cutoff]);
+      // cutoff보다 과거이면서 가장 가까운 스냅샷
+      for (const snapshot of snapshots) {
+        if (Number(snapshot.ts) <= cutoff) {
+          old = snapshot;
+          break;
+        }
+      }
 
-      return snapshot.rows[0] || null;
+      const oldSubscribers =
+        old
+          ? Number(old.subscriber_count || 0)
+          : subscribers;
+
+      const oldViews =
+        old
+          ? Number(old.view_count || 0)
+          : totalViews;
+
+      const subscriberGain = Math.max(
+        0,
+        subscribers - oldSubscribers
+      );
+
+      const viewGain = Math.max(
+        0,
+        totalViews - oldViews
+      );
+
+      return {
+        subscriberGain,
+
+        subscriberGrowthRate:
+          oldSubscribers > 0
+            ? (subscriberGain / oldSubscribers) * 100
+            : 0,
+
+        viewGain,
+        available: Boolean(old)
+      };
     }
 
-    const rows = [];
-
-    for (const row of result.rows) {
+    const rows = channelsResult.rows.map(row => {
       const subscribers =
         Number(row.subscriber_count || 0);
 
@@ -771,66 +847,50 @@ app.get('/api/channel-rankings', async (req, res) => {
       const videoCount =
         Number(row.video_count || 0);
 
-      const changes = {};
+      const snapshots =
+        snapshotsByChannel.get(row.channel_id) || [];
 
-      for (const [key, ms] of Object.entries(periods)) {
-        const old = await getSnapshot(
-          row.channel_id,
-          Date.now() - ms
-        );
+      const d10 = getPeriodData(
+        snapshots,
+        now - periods.d10,
+        subscribers,
+        totalViews
+      );
 
-        const oldSubscribers =
-          old
-            ? Number(old.subscriber_count || 0)
-            : subscribers;
+      const d1 = getPeriodData(
+        snapshots,
+        now - periods.d1,
+        subscribers,
+        totalViews
+      );
 
-        const oldViews =
-          old
-            ? Number(old.view_count || 0)
-            : totalViews;
+      const d6 = getPeriodData(
+        snapshots,
+        now - periods.d6,
+        subscribers,
+        totalViews
+      );
 
-        const subscriberGain = Math.max(
-          0,
-          subscribers - oldSubscribers
-        );
+      const d24 = getPeriodData(
+        snapshots,
+        now - periods.d24,
+        subscribers,
+        totalViews
+      );
 
-        const viewGain = Math.max(
-          0,
-          totalViews - oldViews
-        );
+      const d7 = getPeriodData(
+        snapshots,
+        now - periods.d7,
+        subscribers,
+        totalViews
+      );
 
-        const subscriberGrowthRate =
-          oldSubscribers > 0
-            ? (subscriberGain / oldSubscribers) * 100
-            : 0;
-
-        changes[key] = {
-          subscriberGain,
-          subscriberGrowthRate,
-          viewGain,
-          available: Boolean(old)
-        };
-      }
-
-      // 월 수익은 실제 수익이 아니라 조회수 기반 추정 범위.
-      // RPM 가정값은 나중에 카테고리/국가별로 세분화한다.
       const monthlyViewEstimate =
-        changes.d7.viewGain > 0
-          ? (changes.d7.viewGain / 7) * 30
-          : changes.d3.viewGain > 0
-            ? (changes.d3.viewGain / 3) * 30
-            : changes.d24.viewGain * 30;
+        d7.available && d7.viewGain > 0
+          ? (d7.viewGain / 7) * 30
+          : d24.viewGain * 30;
 
-      const estimatedMonthlyRevenue = {
-        min: Math.round(
-          (monthlyViewEstimate / 1000) * 0.5
-        ),
-        max: Math.round(
-          (monthlyViewEstimate / 1000) * 5
-        )
-      };
-
-      rows.push({
+      return {
         channelId: row.channel_id,
         title: row.title,
 
@@ -844,70 +904,41 @@ app.get('/api/channel-rankings', async (req, res) => {
         lastSeen:
           Number(row.last_seen || 0),
 
-        d10: changes.d10,
-        d1: changes.d1,
-        d6: changes.d6,
-        d24: changes.d24,
-        d3: changes.d3,
-        d7: changes.d7,
+        d10,
+        d1,
+        d6,
+        d24,
+        d7,
 
         estimatedMonthlyViews:
           Math.round(monthlyViewEstimate),
 
-        estimatedMonthlyRevenue,
-
-        viewsPerSubscriber:
-          subscribers > 0
-            ? totalViews / subscribers
-            : 0
-      });
-    }
-
-    const sort =
-      String(req.query.sort || 'd24_subscribers');
+        estimatedMonthlyRevenue: {
+          min: Math.round(
+            (monthlyViewEstimate / 1000) * 0.5
+          ),
+          max: Math.round(
+            (monthlyViewEstimate / 1000) * 5
+          )
+        }
+      };
+    });
 
     const sortMap = {
-      d10_subscribers:
-        x => x.d10.subscriberGain,
+      d10_subscribers: x => x.d10.subscriberGain,
+      d1_subscribers: x => x.d1.subscriberGain,
+      d6_subscribers: x => x.d6.subscriberGain,
+      d24_subscribers: x => x.d24.subscriberGain,
+      d7_subscribers: x => x.d7.subscriberGain,
 
-      d1_subscribers:
-        x => x.d1.subscriberGain,
+      d10_views: x => x.d10.viewGain,
+      d1_views: x => x.d1.viewGain,
+      d6_views: x => x.d6.viewGain,
+      d24_views: x => x.d24.viewGain,
+      d7_views: x => x.d7.viewGain,
 
-      d6_subscribers:
-        x => x.d6.subscriberGain,
-
-      d24_subscribers:
-        x => x.d24.subscriberGain,
-
-      d3_subscribers:
-        x => x.d3.subscriberGain,
-
-      d7_subscribers:
-        x => x.d7.subscriberGain,
-
-      d10_views:
-        x => x.d10.viewGain,
-
-      d1_views:
-        x => x.d1.viewGain,
-
-      d6_views:
-        x => x.d6.viewGain,
-
-      d24_views:
-        x => x.d24.viewGain,
-
-      d3_views:
-        x => x.d3.viewGain,
-
-      d7_views:
-        x => x.d7.viewGain,
-
-      subscribers:
-        x => x.subscribers,
-
-      totalViews:
-        x => x.totalViews
+      subscribers: x => x.subscribers,
+      totalViews: x => x.totalViews
     };
 
     const sortFunction =
@@ -923,25 +954,30 @@ app.get('/api/channel-rankings', async (req, res) => {
     res.json({
       limit,
       sort,
+
       periods: [
         'd10',
         'd1',
         'd6',
         'd24',
-        'd3',
         'd7'
       ],
+
       items: rows.slice(0, limit)
     });
 
   } catch (error) {
-    console.error(error);
+    console.error(
+      '채널 랭킹 오류:',
+      error
+    );
 
     res.status(500).json({
       error: error.message
     });
   }
 });
+  
 app.get('/api/channel-search', async (req, res) => {
   try {
     const query =
