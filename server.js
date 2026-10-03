@@ -205,9 +205,15 @@ await db.query(`
       nickname TEXT,
       plan TEXT NOT NULL DEFAULT 'FREE',
       subscription_status TEXT NOT NULL DEFAULT 'inactive',
+      special_access BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await db.query(`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS special_access BOOLEAN NOT NULL DEFAULT FALSE
+`);
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS sessions(
@@ -285,11 +291,13 @@ async function getUser(req) {
 
   const result = await db.query(`
     SELECT
-      u.id,
-      u.email,
-      u.nickname,
-      u.plan,
-      u.subscription_status
+  u.id,
+  u.email,
+  u.nickname,
+  u.plan,
+  u.subscription_status,
+  u.special_access
+
     FROM sessions s
     JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = $1
@@ -307,6 +315,7 @@ async function getUser(req) {
   ) {
     user.plan = 'OWNER';
     user.subscription_status = 'active';
+    user.special_access = true;
   }
 
   return user;
@@ -702,7 +711,8 @@ app.post('/api/auth/login', async (req, res) => {
       email: user.email,
       nickname: user.nickname,
       plan: user.plan,
-      subscription_status: user.subscription_status
+      subscription_status: user.subscription_status,
+      special_access: Boolean(user.special_access)
     };
 
     if (
@@ -711,6 +721,7 @@ app.post('/api/auth/login', async (req, res) => {
     ) {
       responseUser.plan = 'OWNER';
       responseUser.subscription_status = 'active';
+      responseUser.special_access = true;
     }
 
     res.json({
