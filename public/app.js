@@ -442,7 +442,157 @@ function render(rows) {
     })
     .join('');
 }
-function renderChannels(rows, period = 'd24') {
+async function openChannelAnalysis(channelId) {
+  function renderChannels(rows, period = 'd24') {
+  const query = $('#search').value
+    .trim()
+    .toLowerCase();
+
+  const filtered = rows.filter(x =>
+    String(x.title || '')
+      .toLowerCase()
+      .includes(query)
+  );
+
+  if (!filtered.length) {
+    $('#list').innerHTML = `
+      <div class="empty">
+        조건에 맞는 채널이 없습니다.
+      </div>
+    `;
+    return;
+  }
+
+  const gain = (x, key) =>
+    Number(
+      x[key]?.subscriberGain || 0
+    );
+
+  const available = (x, key) =>
+    Boolean(x[key]?.available);
+
+  const gainText = (x, key) =>
+    available(x, key)
+      ? `+${gain(x, key).toLocaleString()}`
+      : '수집 중';
+
+  $('#list').innerHTML = `
+    <div class="channel-ranking-table">
+
+      <div class="channel-ranking-row channel-ranking-header">
+        <div>순위</div>
+        <div>채널</div>
+        <div>총 구독자</div>
+        <div>10분 ↑</div>
+        <div>1시간 ↑</div>
+        <div>6시간 ↑</div>
+        <div>24시간 ↑</div>
+        <div>7일 ↑</div>
+        <div>총 조회수</div>
+        <div>영상 수</div>
+        <div>추정 월수익</div>
+        <div>분석</div>
+      </div>
+
+      ${filtered.map((x, index) => {
+        const title =
+          escapeHtml(x.title || '채널명 없음');
+
+        const subscribers =
+          Number(x.subscribers || 0);
+
+        const totalViews =
+          Number(x.totalViews || 0);
+
+        const videoCount =
+          Number(x.videoCount || 0);
+
+        const revenueMin =
+          Number(
+            x.estimatedMonthlyRevenue?.min || 0
+          );
+
+        const revenueMax =
+          Number(
+            x.estimatedMonthlyRevenue?.max || 0
+          );
+
+        return `
+          <div class="channel-ranking-row">
+
+            <div class="channel-rank">
+              ${index + 1}
+            </div>
+
+            <div class="channel-name-cell">
+              <strong>${title}</strong>
+            </div>
+
+            <div class="channel-number">
+              ${subscribers.toLocaleString()}
+            </div>
+
+            <div class="channel-growth">
+              ${gainText(x, 'd10')}
+            </div>
+
+            <div class="channel-growth">
+              ${gainText(x, 'd1')}
+            </div>
+
+            <div class="channel-growth">
+              ${gainText(x, 'd6')}
+            </div>
+
+            <div class="channel-growth">
+              ${gainText(x, 'd24')}
+            </div>
+
+            <div class="channel-growth">
+              ${gainText(x, 'd7')}
+            </div>
+
+            <div class="channel-number">
+              ${totalViews.toLocaleString()}
+            </div>
+
+            <div class="channel-number">
+              ${videoCount.toLocaleString()}
+            </div>
+
+            <div class="channel-revenue">
+              $${revenueMin.toLocaleString()}
+              ~
+              $${revenueMax.toLocaleString()}
+            </div>
+
+            <div>
+              <button
+                type="button"
+                class="channel-analysis-btn"
+                data-channel-id="${escapeHtml(x.channelId || '')}"
+              >
+                🔎 상세
+              </button>
+            </div>
+
+          </div>
+        `;
+      }).join('')}
+
+    </div>
+  `;
+
+  document
+    .querySelectorAll('.channel-analysis-btn')
+    .forEach(button => {
+      button.addEventListener('click', () => {
+        openChannelAnalysis(
+          button.dataset.channelId
+        );
+      });
+    });
+}
   const query = $('#search').value
     .trim()
     .toLowerCase();
