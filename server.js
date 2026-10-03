@@ -33,21 +33,76 @@ const regions = [
   'ZA','AR','CL','CO','PE','NZ','IE','PT','BE','AT',
   'CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'
 ];
+function getSimpleCategory(categoryId, title = '', channel = '') {
+  const text =
+    `${title} ${channel}`.toLowerCase();
 
+  // 세부 카테고리는 제목/채널명으로 먼저 보정
+  if (
+    /주식|재테크|경제|코인|비트코인|부동산|finance|stock|crypto|bitcoin|invest/.test(text)
+  ) {
+    return 'economy';
+  }
+
+  if (
+    /인공지능|ai |chatgpt|테크|코딩|개발|technology|software|coding|gadget/.test(text)
+  ) {
+    return 'tech';
+  }
+
+  if (
+    /뷰티|메이크업|패션|화장|beauty|makeup|fashion|skincare|cosmetic/.test(text)
+  ) {
+    return 'beauty';
+  }
+
+  if (
+    /먹방|요리|음식|여행|맛집|mukbang|food|cooking|recipe|travel|restaurant/.test(text)
+  ) {
+    return 'food_travel';
+  }
+
+  const categoryMap = {
+    '1': 'entertainment',
+    '2': 'life',
+    '10': 'music',
+    '15': 'life',
+    '17': 'sports',
+    '19': 'food_travel',
+    '20': 'gaming',
+    '22': 'life',
+    '23': 'entertainment',
+    '24': 'entertainment',
+    '25': 'news',
+    '26': 'life',
+    '27': 'education',
+    '28': 'tech',
+    '29': 'life'
+  };
+
+  return categoryMap[String(categoryId)] || 'entertainment';
+}
 async function initDB() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS videos(
-      id TEXT PRIMARY KEY,
-      title TEXT,
-      channel TEXT,
-      region TEXT,
-      thumbnail TEXT,
-      publishedAt TEXT,
-      duration TEXT,
-      views BIGINT DEFAULT 0,
-      lastSeen BIGINT
-    )
+  id TEXT PRIMARY KEY,
+  title TEXT,
+  channel TEXT,
+  channel_id TEXT,
+  region TEXT,
+  thumbnail TEXT,
+  publishedAt TEXT,
+  duration TEXT,
+  category_id TEXT,
+  views BIGINT DEFAULT 0,
+  lastSeen BIGINT
+)
   `);
+await db.query(`
+  ALTER TABLE videos
+  ADD COLUMN IF NOT EXISTS channel_id TEXT,
+  ADD COLUMN IF NOT EXISTS category_id TEXT
+`);
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS snapshots(
@@ -378,30 +433,34 @@ async function refreshRegion(region) {
     );
 
     await db.query(`
-      INSERT INTO videos(
-        id,title,channel,region,thumbnail,
-        publishedAt,duration,views,lastSeen
-      )
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
-      ON CONFLICT(id) DO UPDATE SET
-        title=EXCLUDED.title,
-        channel=EXCLUDED.channel,
-        thumbnail=EXCLUDED.thumbnail,
-        publishedAt=EXCLUDED.publishedAt,
-        duration=EXCLUDED.duration,
-        views=EXCLUDED.views,
-        lastSeen=EXCLUDED.lastSeen
-    `, [
-      x.id,
-      x.snippet.title,
-      x.snippet.channelTitle,
-      region,
-      x.snippet.thumbnails?.medium?.url || '',
-      x.snippet.publishedAt,
-      x.contentDetails?.duration || '',
-      views,
-      now
-    ]);
+  INSERT INTO videos(
+    id,title,channel,channel_id,region,thumbnail,
+    publishedAt,duration,category_id,views,lastSeen
+  )
+  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+  ON CONFLICT(id) DO UPDATE SET
+    title=EXCLUDED.title,
+    channel=EXCLUDED.channel,
+    channel_id=EXCLUDED.channel_id,
+    thumbnail=EXCLUDED.thumbnail,
+    publishedAt=EXCLUDED.publishedAt,
+    duration=EXCLUDED.duration,
+    category_id=EXCLUDED.category_id,
+    views=EXCLUDED.views,
+    lastSeen=EXCLUDED.lastSeen
+`, [
+  x.id,
+  x.snippet.title,
+  x.snippet.channelTitle,
+  x.snippet.channelId || '',
+  region,
+  x.snippet.thumbnails?.medium?.url || '',
+  x.snippet.publishedAt,
+  x.contentDetails?.duration || '',
+  x.snippet.categoryId || '',
+  views,
+  now
+]);
 
     await db.query(`
       INSERT INTO video_regions(
@@ -452,26 +511,30 @@ async function refreshTrackedVideos() {
       );
 
       await db.query(`
-        UPDATE videos
-        SET
-          title=$2,
-          channel=$3,
-          thumbnail=$4,
-          publishedAt=$5,
-          duration=$6,
-          views=$7,
-          lastSeen=$8
-        WHERE id=$1
-      `, [
-        x.id,
-        x.snippet.title,
-        x.snippet.channelTitle,
-        x.snippet.thumbnails?.medium?.url || '',
-        x.snippet.publishedAt,
-        x.contentDetails?.duration || '',
-        views,
-        now
-      ]);
+  UPDATE videos
+  SET
+    title=$2,
+    channel=$3,
+    channel_id=$4,
+    thumbnail=$5,
+    publishedAt=$6,
+    duration=$7,
+    category_id=$8,
+    views=$9,
+    lastSeen=$10
+  WHERE id=$1
+`, [
+  x.id,
+  x.snippet.title,
+  x.snippet.channelTitle,
+  x.snippet.channelId || '',
+  x.snippet.thumbnails?.medium?.url || '',
+  x.snippet.publishedAt,
+  x.contentDetails?.duration || '',
+  x.snippet.categoryId || '',
+  views,
+  now
+]);
 
       await db.query(`
         INSERT INTO snapshots(videoId,ts,views)
