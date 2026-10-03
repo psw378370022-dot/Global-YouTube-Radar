@@ -942,6 +942,204 @@ app.get('/api/channel-rankings', async (req, res) => {
     });
   }
 });
+app.get('/api/channel-search', async (req, res) => {
+  try {
+    const query =
+      String(req.query.q || '')
+        .trim()
+        .slice(0, 100);
+
+    if (query.length < 2) {
+      return res.json({
+        query,
+        items: []
+      });
+    }
+
+    const result = await db.query(`
+      SELECT
+        channel_id,
+        title,
+        subscriber_count,
+        view_count,
+        video_count,
+        hidden_subscriber_count,
+        last_seen
+      FROM channels
+      WHERE title ILIKE $1
+      ORDER BY subscriber_count DESC
+      LIMIT 50
+    `, [`%${query}%`]);
+
+    res.json({
+      query,
+      items: result.rows.map(row => ({
+        channelId: row.channel_id,
+        title: row.title,
+        subscribers:
+          Number(row.subscriber_count || 0),
+        totalViews:
+          Number(row.view_count || 0),
+        videoCount:
+          Number(row.video_count || 0),
+        hiddenSubscriberCount:
+          Boolean(row.hidden_subscriber_count),
+        lastSeen:
+          Number(row.last_seen || 0)
+      }))
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/channel-analysis/:channelId', async (req, res) => {
+  try {
+    const channelId =
+      String(req.params.channelId || '').trim();
+
+    const result = await db.query(`
+      SELECT
+        channel_id,
+        title,
+        subscriber_count,
+        view_count,
+        video_count,
+        hidden_subscriber_count,
+        last_seen
+      FROM channels
+      WHERE channel_id = $1
+      LIMIT 1
+    `, [channelId]);
+
+    const row = result.rows[0];
+
+    if (!row) {
+      return res.status(404).json({
+        error: '채널을 찾을 수 없습니다.'
+      });
+    }
+
+    const subscribers =
+      Number(row.subscriber_count || 0);
+
+    const totalViews =
+      Number(row.view_count || 0);
+
+    const videoCount =
+      Number(row.video_count || 0);
+
+    const periods = {
+      d10: 10 * 60 * 1000,
+      d1: 60 * 60 * 1000,
+      d6: 6 * 60 * 60 * 1000,
+      d24: 24 * 60 * 60 * 1000,
+      d3: 3 * 24 * 60 * 60 * 1000,
+      d7: 7 * 24 * 60 * 60 * 1000
+    };
+
+    const growth = {};
+
+    for (const [key, ms] of Object.entries(periods)) {
+      const snapshot = await db.query(`
+        SELECT
+          subscriber_count,
+          view_count,
+          video_count,
+          ts
+        FROM channel_snapshots
+        WHERE channel_id = $1
+          AND ts <= $2
+        ORDER BY ts DESC
+        LIMIT 1
+      `, [
+        channelId,
+        Date.now() - ms
+      ]);
+
+      const old = snapshot.rows[0] || null;
+
+      const oldSubscribers =
+        old
+          ? Number(old.subscriber_count || 0)
+          : subscribers;
+
+      const oldViews =
+        old
+          ? Number(old.view_count || 0)
+          : totalViews;
+
+      const subscriberGain = Math.max(
+        0,
+        subscribers - oldSubscribers
+      );
+
+      const viewGain = Math.max(
+        0,
+        totalViews - oldViews
+      );
+
+      growth[key] = {
+        subscriberGain,
+        subscriberGrowthRate:
+          oldSubscribers > 0
+            ? (subscriberGain / oldSubscribers) * 100
+            : 0,
+        viewGain,
+        available: Boolean(old),
+        snapshotTime:
+          old ? Number(old.ts || 0) : null
+      };
+    }
+
+    const monthlyViews =
+      growth.d7.viewGain > 0
+        ? (growth.d7.viewGain / 7) * 30
+        : growth.d3.viewGain > 0
+          ? (growth.d3.viewGain / 3) * 30
+          : growth.d24.viewGain * 30;
+
+    res.json({
+      channelId: row.channel_id,
+      title: row.title,
+      subscribers,
+      totalViews,
+      videoCount,
+
+      hiddenSubscriberCount:
+        Boolean(row.hidden_subscriber_count),
+
+      lastSeen:
+        Number(row.last_seen || 0),
+
+      growth,
+
+      estimatedMonthlyViews:
+        Math.round(monthlyViews),
+
+      estimatedMonthlyRevenue: {
+        min: Math.round(
+          (monthlyViews / 1000) * 0.5
+        ),
+        max: Math.round(
+          (monthlyViews / 1000) * 5
+        )
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
 app.get('/api/rankings', async (req, res) => {
   try {
     const user = await getUser(req);
