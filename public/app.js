@@ -9,7 +9,7 @@ const fmt = n => {
   }).format(Number(n));
 };
 
-const els = ['region', 'type', 'metric', 'limit'];
+const els = ['region', 'type', 'category', 'metric', 'limit'];
 
 let currentUser = null;
 let rankingMode = 'video';
@@ -392,10 +392,25 @@ function render(rows) {
             </a>
 
             <div class="sub">
-              ${channel}
-              · ${region}
-              · ${x.isShort ? 'Shorts 추정' : 'Video'}
-            </div>
+  ${channel}
+  · ${region}
+  · ${
+      {
+        music: '🎵 음악',
+        entertainment: '🎬 엔터',
+        gaming: '🎮 게임',
+        sports: '⚽ 스포츠',
+        news: '📰 뉴스',
+        economy: '💰 경제',
+        tech: '🤖 테크/AI',
+        education: '📚 교육',
+        life: '🏠 라이프',
+        beauty: '💄 뷰티/패션',
+        food_travel: '🍜 음식/여행'
+      }[x.category] || '🎬 엔터'
+    }
+  · ${x.isShort ? 'Shorts 추정' : 'Video'}
+</div>
           </div>
 
           <div class="num">
