@@ -1075,7 +1075,6 @@ app.get('/api/channel-analysis/:channelId', async (req, res) => {
       d1: 60 * 60 * 1000,
       d6: 6 * 60 * 60 * 1000,
       d24: 24 * 60 * 60 * 1000,
-      d3: 3 * 24 * 60 * 60 * 1000,
       d7: 7 * 24 * 60 * 60 * 1000
     };
 
@@ -1136,9 +1135,7 @@ app.get('/api/channel-analysis/:channelId', async (req, res) => {
     const monthlyViews =
       growth.d7.viewGain > 0
         ? (growth.d7.viewGain / 7) * 30
-        : growth.d3.viewGain > 0
-          ? (growth.d3.viewGain / 3) * 30
-          : growth.d24.viewGain * 30;
+        : growth.d24.viewGain * 30;
 
     res.json({
       channelId: row.channel_id,
@@ -1184,7 +1181,7 @@ app.get('/api/rankings', async (req, res) => {
       String(req.query.region || 'ALL');
 
    const requestedMetric =
-  ['d10', 'd1', 'd6', 'd24', 'd3', 'd7', 'velocity']
+  ['d10', 'd1', 'd6', 'd24', 'd7', 'velocity']
     .includes(req.query.metric)
     ? req.query.metric
     : 'd24';
@@ -1284,18 +1281,7 @@ const limit = Math.min(
             LIMIT 1
           ),v.views)
         ) AS d24,
-        GREATEST(
-  0,
-  v.views - COALESCE((
-    SELECT s.views
-    FROM snapshots s
-    WHERE s.videoId=v.id
-      AND s.ts <=
-        (EXTRACT(EPOCH FROM NOW())*1000 - 259200000)
-    ORDER BY s.ts DESC
-    LIMIT 1
-  ),v.views)
-) AS d3,
+        
 
 GREATEST(
   0,
@@ -1335,7 +1321,6 @@ GREATEST(
       const d1 = Number(x.d1);
       const d6 = Number(x.d6);
       const d24 = Number(x.d24);
-      const d3 = Number(x.d3);
       const d7 = Number(x.d7);
 
       return {
@@ -1346,7 +1331,6 @@ GREATEST(
         d1,
         d6,
         d24,
-        d3,
         d7,
         velocity:
           d1 || d10 * 6,
