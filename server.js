@@ -320,6 +320,14 @@ async function getUser(req) {
 
   return user;
 }
+
+function canUseSpecialFeatures(user) {
+  return (
+    String(user?.plan || '').toUpperCase() === 'OWNER' ||
+    user?.special_access === true
+  );
+}
+
 function getPlanAccess(user) {
   const plan = String(user?.plan || 'FREE').toUpperCase();
   const active = user?.subscription_status === 'active';
