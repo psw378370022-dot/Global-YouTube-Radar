@@ -36,14 +36,68 @@ const regions = [
 function getSimpleCategory(categoryId, title = '', channel = '') {
   const text =
     `${title} ${channel}`.toLowerCase();
+  function isChinaRelated(title = '', channel = '') {
+  const text =
+    `${title} ${channel}`.toLowerCase();
+
+  const chinaSignals = [
+    '中国',
+    '中國',
+    '中国大陆',
+    '中國大陸',
+    '北京',
+    '上海',
+    '深圳',
+    '广州',
+    '廣州',
+    '杭州',
+    '成都',
+    '重庆',
+    '重慶',
+    '武汉',
+    '武漢',
+    '南京',
+    '西安',
+
+    '抖音',
+    'douyin',
+
+    '哔哩哔哩',
+    '嗶哩嗶哩',
+    'bilibili',
+
+    '小红书',
+    '小紅書',
+    'xiaohongshu',
+
+    '微博',
+    'weibo',
+
+    'china',
+    'chinese',
+    'beijing',
+    'shanghai',
+    'shenzhen'
+  ];
+
+  return chinaSignals.some(
+    signal => text.includes(signal)
+  );
+}
 
   // 세부 카테고리는 제목/채널명으로 먼저 보정
   if (
-    /주식|재테크|경제|코인|비트코인|부동산|finance|stock|crypto|bitcoin|invest/.test(text)
+    /주식|재테크|경제|투자|금융|증시|코인|비트코인|부동산|etf|금리|환율|채권|배당|나스닥|코스피|코스닥|세금|창업|사업|자산관리|펀드|연금|finance|stock|stocks|crypto|bitcoin|invest|investment|nasdaq|bond|dividend|tax|startup|business|fund|pension/
   ) {
     return 'economy';
   }
-
+  
+  if (
+  /뉴스|속보|시사|정치|사회|국제|세계|외교|사건|사고|날씨|재난|선거|국회|정부|대통령|기자|방송|보도|현장|인터뷰|news|breaking|politics|world|global|election|government|report/.test(text)
+) {
+  return 'news';
+}
+  
   if (
     /인공지능|ai |chatgpt|테크|코딩|개발|technology|software|coding|gadget/.test(text)
   ) {
