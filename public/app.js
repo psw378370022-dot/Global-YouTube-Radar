@@ -535,8 +535,26 @@ function render(rows) {
             </div>
 
             <div class="channel-name-cell">
-              <strong>${title}</strong>
-            </div>
+  <strong>${title}</strong>
+
+  <span class="channel-category">
+    ${
+      ({
+        music: '🎵 음악',
+        entertainment: '🎬 엔터',
+        gaming: '🎮 게임',
+        sports: '⚽ 스포츠',
+        news: '📰 뉴스',
+        economy: '💰 경제',
+        tech: '🤖 테크/AI',
+        education: '📚 교육',
+        life: '🏠 라이프',
+        beauty: '💄 뷰티/패션',
+        food_travel: '🍜 음식/여행'
+      })[x.category] || '🎬 엔터'
+    }
+  </span>
+</div>
 
             <div class="channel-number">
               ${subscribers.toLocaleString()}
