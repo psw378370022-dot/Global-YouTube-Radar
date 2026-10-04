@@ -33,6 +33,70 @@ const regions = [
   'ZA','AR','CL','CO','PE','NZ','IE','PT','BE','AT',
   'CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'
 ];
+const chinaDiscoveryQueries = [
+  // 뉴스 / 시사
+  '中国 新闻',
+  '中国 热点',
+  '中国 时事',
+  '微博 热搜',
+  'Weibo trending China',
+
+  // 드라마 / 방송
+  '中国 电视剧',
+  '中国 网剧',
+  'Chinese drama',
+  '中国 电视',
+
+  // 영화
+  '中国 电影',
+  '华语 电影',
+  'Chinese movie',
+
+  // 예능
+  '中国 综艺',
+  '中国 真人秀',
+  'Chinese variety show',
+
+  // 연예
+  '中国 娱乐',
+  '中国 明星',
+  '中国 娱乐圈',
+  '微博 明星',
+
+  // 음악
+  '华语 音乐',
+  '中国 音乐',
+  '抖音 神曲',
+  'Douyin music',
+  'Bilibili music',
+
+  // 게임 / e스포츠
+  '中国 游戏',
+  '中国 电竞',
+  'Bilibili 游戏',
+  'China esports',
+
+  // Douyin
+  '抖音 热门',
+  '抖音 trending',
+  'Douyin trending',
+  'Douyin viral',
+
+  // Bilibili
+  '哔哩哔哩 热门',
+  'Bilibili trending',
+  'Bilibili viral',
+
+  // Xiaohongshu
+  '小红书 热门',
+  '小红书 娱乐',
+  'Xiaohongshu trending',
+
+  // Weibo
+  '微博 热门',
+  '微博 热搜',
+  'Weibo trending'
+];
 function getSimpleCategory(categoryId, title = '', channel = '') {
   const text =
     `${title} ${channel}`.toLowerCase();
