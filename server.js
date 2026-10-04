@@ -357,9 +357,10 @@ await db.query(`
     viewcount_seeded,
     last_run
   )
-  VALUES(1, 0, FALSE, 0)
+  VALUES(1, 0, FALSE, FALSE, 0)
   ON CONFLICT(id) DO NOTHING
 `);
+  
   await db.query(`
     CREATE INDEX IF NOT EXISTS snapshots_video_ts_idx
     ON snapshots(videoId, ts DESC)
