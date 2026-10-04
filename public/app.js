@@ -82,10 +82,6 @@ function updateAccount() {
     signupBtn.classList.add('hidden');
     logoutBtn.classList.remove('hidden');
 
-  'hidden',
-  !canUseLive
-);
-
     specialAdminBtn.classList.toggle(
   'hidden',
   plan !== 'OWNER'
