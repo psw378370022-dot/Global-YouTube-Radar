@@ -250,6 +250,21 @@ async function load() {
 );
 if (rankingMode === 'china') {
   qs.set('china', 'true');
+
+  qs.set(
+    'chinaCategory',
+    $('#chinaCategory')?.value || 'all'
+  );
+
+  qs.set(
+    'chinaPlatform',
+    $('#chinaPlatform')?.value || 'all'
+  );
+
+  qs.set(
+    'chinaSearch',
+    $('#chinaSearch')?.value.trim() || ''
+  );
 }
     const [st, rows] = await Promise.all([
       api('/api/status'),
@@ -781,6 +796,7 @@ function scheduleLoad() {
 }
 $('#videoTab').addEventListener('click', () => {
   rankingMode = 'video';
+  $('#chinaControls').classList.add('hidden');
   $('#category').classList.add('hidden');
   $('#category').value = 'all';
 
@@ -800,6 +816,7 @@ $('#rankingDescription').textContent =
 
 $('#channelTab').addEventListener('click', () => {
   rankingMode = 'channel';
+  $('#chinaControls').classList.add('hidden');
   $('#category').value = 'all';
   $('#category').classList.add('hidden');
 
@@ -819,6 +836,7 @@ $('#rankingDescription').textContent =
 
 $('#categoryTab').addEventListener('click', () => {
   rankingMode = 'category';
+  $('#chinaControls').classList.add('hidden');
   $('#category').classList.remove('hidden');
 
   $('#categoryTab').classList.add('active');
@@ -836,6 +854,7 @@ $('#rankingDescription').textContent =
 });
 $('#chinaTab').addEventListener('click', () => {
   rankingMode = 'china';
+  $('#chinaControls').classList.remove('hidden');
 
   $('#category').classList.add('hidden');
   $('#category').value = 'all';
@@ -853,6 +872,18 @@ $('#chinaTab').addEventListener('click', () => {
 
   load();
 });
+['chinaCategory', 'chinaPlatform'].forEach(id => {
+  $('#' + id)?.addEventListener(
+    'change',
+    load
+  );
+});
+
+$('#chinaSearch')?.addEventListener(
+  'input',
+  scheduleLoad
+);
+
 els.forEach(id => {
   const element = $('#' + id);
 
