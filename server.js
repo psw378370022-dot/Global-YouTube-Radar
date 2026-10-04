@@ -33,70 +33,13 @@ const regions = [
   'ZA','AR','CL','CO','PE','NZ','IE','PT','BE','AT',
   'CH','CZ','RO','HU','GR','IL','EG','MA','NG','KE'
 ];
-const chinaDiscoveryQueries = [
-  // 뉴스 / 시사
-  '中国 新闻',
-  '中国 热点',
-  '中国 时事',
-  '微博 热搜',
-  'Weibo trending China',
+const chinaDiscoveryQueries = String(
+  process.env.CHINA_DISCOVERY_QUERIES || ''
+)
+  .split('\n')
+  .map(x => x.trim())
+  .filter(Boolean);
 
-  // 드라마 / 방송
-  '中国 电视剧',
-  '中国 网剧',
-  'Chinese drama',
-  '中国 电视',
-
-  // 영화
-  '中国 电影',
-  '华语 电影',
-  'Chinese movie',
-
-  // 예능
-  '中国 综艺',
-  '中国 真人秀',
-  'Chinese variety show',
-
-  // 연예
-  '中国 娱乐',
-  '中国 明星',
-  '中国 娱乐圈',
-  '微博 明星',
-
-  // 음악
-  '华语 音乐',
-  '中国 音乐',
-  '抖音 神曲',
-  'Douyin music',
-  'Bilibili music',
-
-  // 게임 / e스포츠
-  '中国 游戏',
-  '中国 电竞',
-  'Bilibili 游戏',
-  'China esports',
-
-  // Douyin
-  '抖音 热门',
-  '抖音 trending',
-  'Douyin trending',
-  'Douyin viral',
-
-  // Bilibili
-  '哔哩哔哩 热门',
-  'Bilibili trending',
-  'Bilibili viral',
-
-  // Xiaohongshu
-  '小红书 热门',
-  '小红书 娱乐',
-  'Xiaohongshu trending',
-
-  // Weibo
-  '微博 热门',
-  '微博 热搜',
-  'Weibo trending'
-];
 function getSimpleCategory(categoryId, title = '', channel = '') {
   const text =
     `${title} ${channel}`.toLowerCase();
@@ -302,6 +245,8 @@ async function initDB() {
   publishedAt TEXT,
   duration TEXT,
   category_id TEXT,
+  china_discovered BOOLEAN NOT NULL DEFAULT FALSE,
+  china_source TEXT,
   views BIGINT DEFAULT 0,
   lastSeen BIGINT
 )
@@ -310,6 +255,8 @@ await db.query(`
   ALTER TABLE videos
   ADD COLUMN IF NOT EXISTS channel_id TEXT,
   ADD COLUMN IF NOT EXISTS category_id TEXT
+  ADD COLUMN IF NOT EXISTS china_discovered BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS china_source TEXT
 `);
 
   await db.query(`
@@ -1806,6 +1753,37 @@ if (chinaOnly) {
   rows = rows.filter(
     x => x.chinaRelated === true
   );
+
+  const chinaCategory =
+    String(req.query.chinaCategory || 'all');
+
+  if (chinaCategory !== 'all') {
+    rows = rows.filter(
+      x => x.chinaCategory === chinaCategory
+    );
+  }
+
+  const chinaPlatform =
+    String(req.query.chinaPlatform || 'all');
+
+  if (chinaPlatform !== 'all') {
+    rows = rows.filter(
+      x => x.chinaPlatform === chinaPlatform
+    );
+  }
+
+  const chinaSearch =
+    String(req.query.chinaSearch || '')
+      .trim()
+      .toLowerCase();
+
+  if (chinaSearch) {
+    rows = rows.filter(x =>
+      `${x.title || ''} ${x.channel || ''}`
+        .toLowerCase()
+        .includes(chinaSearch)
+    );
+  }
 }
     rows.sort(
       (a, b) =>
