@@ -248,7 +248,9 @@ async function load() {
       .filter(Boolean)
   )
 );
-
+if (rankingMode === 'china') {
+  qs.set('china', 'true');
+}
     const [st, rows] = await Promise.all([
       api('/api/status'),
       api('/api/rankings?' + qs.toString())
@@ -785,7 +787,7 @@ $('#videoTab').addEventListener('click', () => {
   $('#videoTab').classList.add('active');
   $('#categoryTab').classList.remove('active');
   $('#channelTab').classList.remove('active');
-  
+  $('#chinaTab').classList.remove('active');
 
   $('#rankingTitle').textContent =
   '🔥 영상 급상승 랭킹';
@@ -804,7 +806,7 @@ $('#channelTab').addEventListener('click', () => {
   $('#channelTab').classList.add('active');
   $('#categoryTab').classList.remove('active');
   $('#videoTab').classList.remove('active');
-  
+  $('#chinaTab').classList.remove('active');
 
   $('#rankingTitle').textContent =
   '🚀 채널 급성장 랭킹';
@@ -822,7 +824,7 @@ $('#categoryTab').addEventListener('click', () => {
   $('#categoryTab').classList.add('active');
   $('#videoTab').classList.remove('active');
   $('#channelTab').classList.remove('active');
-  
+  $('#chinaTab').classList.remove('active');
 
   $('#rankingTitle').textContent =
   '📂 카테고리 분석 랭킹';
@@ -832,7 +834,25 @@ $('#rankingDescription').textContent =
 
   load();
 });
+$('#chinaTab').addEventListener('click', () => {
+  rankingMode = 'china';
 
+  $('#category').classList.add('hidden');
+  $('#category').value = 'all';
+
+  $('#chinaTab').classList.add('active');
+  $('#videoTab').classList.remove('active');
+  $('#channelTab').classList.remove('active');
+  $('#categoryTab').classList.remove('active');
+
+  $('#rankingTitle').textContent =
+    '🇨🇳 중국 관련 콘텐츠 분석';
+
+  $('#rankingDescription').textContent =
+    'YouTube에서 수집된 중국 관련 영상의 급상승 데이터를 분석합니다.';
+
+  load();
+});
 els.forEach(id => {
   const element = $('#' + id);
 
