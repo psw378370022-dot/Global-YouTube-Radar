@@ -64,6 +64,7 @@ function updateAccount() {
   const logoutBtn = $('#logoutBtn');
  
   const specialAdminBtn = $('#specialAdminBtn');
+  const chinaTab = $('#chinaTab');
 
   if (currentUser) {
     const plan = currentUser.plan || 'FREE';
@@ -86,6 +87,18 @@ function updateAccount() {
   'hidden',
   plan !== 'OWNER'
 );
+    const canUseChina =
+  plan === 'OWNER' ||
+  (
+    plan === 'BUSINESS' &&
+    currentUser.subscription_status === 'active'
+  );
+
+chinaTab.classList.toggle(
+  'hidden',
+  !canUseChina
+);
+    
 } else {
     planBadge.textContent = 'FREE';
     planBadge.classList.remove('pro');
@@ -98,6 +111,7 @@ function updateAccount() {
     
     
     specialAdminBtn.classList.add('hidden');
+    chinaTab.classList.add('hidden');
   }
 }
 
