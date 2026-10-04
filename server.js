@@ -232,6 +232,64 @@ function isChinaRelated(title = '', channel = '') {
     signal => text.includes(signal)
   );
 }
+function getChinaCategory(title = '', channel = '') {
+  const text =
+    `${title} ${channel}`.toLowerCase();
+
+  if (/新闻|热点|时事|热搜|央视|news|breaking/.test(text)) {
+    return 'news';
+  }
+
+  if (/电视剧|网剧|短剧|剧集|drama|series/.test(text)) {
+    return 'drama';
+  }
+
+  if (/电影|影片|movie|film/.test(text)) {
+    return 'movie';
+  }
+
+  if (/综艺|真人秀|variety show|variety/.test(text)) {
+    return 'variety';
+  }
+
+  if (/明星|娱乐圈|娱乐|艺人|演员|celebrity|star/.test(text)) {
+    return 'celebrity';
+  }
+
+  if (/音乐|歌曲|神曲|歌手|mv|music|song/.test(text)) {
+    return 'music';
+  }
+
+  if (/游戏|电竞|game|gaming|esports|valorant|原神|王者荣耀/.test(text)) {
+    return 'gaming';
+  }
+
+  return 'other';
+}
+
+function getChinaPlatform(title = '', channel = '') {
+  const text =
+    `${title} ${channel}`.toLowerCase();
+
+  if (/抖音|douyin/.test(text)) {
+    return 'douyin';
+  }
+
+  if (/哔哩哔哩|嗶哩嗶哩|bilibili/.test(text)) {
+    return 'bilibili';
+  }
+
+  if (/小红书|小紅書|xiaohongshu/.test(text)) {
+    return 'xiaohongshu';
+  }
+
+  if (/微博|weibo/.test(text)) {
+    return 'weibo';
+  }
+
+  return 'other';
+}
+
 async function initDB() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS videos(
@@ -1696,7 +1754,17 @@ GREATEST(
   chinaRelated: isChinaRelated(
   x.title,
   x.channel
-  ),
+),
+
+chinaCategory: getChinaCategory(
+  x.title,
+  x.channel
+),
+
+chinaPlatform: getChinaPlatform(
+  x.title,
+  x.channel
+),
         
         lastSeen: Number(x.lastSeen),
         d10,
