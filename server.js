@@ -324,7 +324,25 @@ await db.query(`
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+await db.query(`
+  CREATE TABLE IF NOT EXISTS china_discovery_state(
+    id INTEGER PRIMARY KEY,
+    next_index INTEGER NOT NULL DEFAULT 0,
+    initial_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    last_run BIGINT DEFAULT 0
+  )
+`);
 
+await db.query(`
+  INSERT INTO china_discovery_state(
+    id,
+    next_index,
+    initial_completed,
+    last_run
+  )
+  VALUES(1, 0, FALSE, 0)
+  ON CONFLICT(id) DO NOTHING
+`);
   await db.query(`
     CREATE INDEX IF NOT EXISTS snapshots_video_ts_idx
     ON snapshots(videoId, ts DESC)
@@ -652,7 +670,251 @@ async function refreshRegion(region) {
   }
   await refreshChannels(channelIds);
 }
+async function discoverChinaVideos() {
+  if (!chinaDiscoveryQueries.length) {
+    console.log('중국 자동수집 검색어가 없습니다.');
+    return;
+  }
 
+  const stateResult = await db.query(`
+    SELECT
+      next_index,
+      initial_completed,
+      last_run
+    FROM china_discovery_state
+    WHERE id = 1
+    LIMIT 1
+  `);
+
+  const state = stateResult.rows[0];
+
+  if (!state) return;
+
+  let startIndex =
+    Number(state.next_index || 0);
+
+  // 처음 수집이 이미 끝났다면 여기서는 다시 전체 수집하지 않는다.
+  let endIndex =
+  chinaDiscoveryQueries.length;
+
+if (state.initial_completed) {
+  const intervalMinutes = Math.max(
+    Number(
+      process.env.CHINA_DISCOVERY_INTERVAL_MINUTES
+    ) || 120,
+    30
+  );
+
+  const lastRun =
+    Number(state.last_run || 0);
+
+  const intervalMs =
+    intervalMinutes * 60 * 1000;
+
+  if (
+    Date.now() - lastRun <
+    intervalMs
+  ) {
+    return;
+  }
+
+  startIndex =
+    startIndex %
+    chinaDiscoveryQueries.length;
+
+  endIndex =
+    startIndex + 1;
+}
+
+  const maxResults = Math.min(
+    Math.max(
+      Number(
+        process.env.CHINA_DISCOVERY_MAX_RESULTS
+      ) || 10,
+      1
+    ),
+    50
+  );
+
+  for (
+  let i = startIndex;
+  i < endIndex;
+  i++
+) {
+    const query =
+      chinaDiscoveryQueries[i];
+
+    try {
+      console.log(
+        `중국 자동수집 ${i + 1}/${chinaDiscoveryQueries.length}:`,
+        query
+      );
+
+      const searchData = await yt(
+        'search',
+        {
+          part: 'snippet',
+          q: query,
+          type: 'video',
+          order: 'date',
+          maxResults: String(maxResults)
+        }
+      );
+
+      const ids = (searchData?.items || [])
+        .map(item => item.id?.videoId)
+        .filter(Boolean);
+
+      if (ids.length) {
+        const details = await yt(
+          'videos',
+          {
+            part:
+              'snippet,statistics,contentDetails',
+            id: ids.join(',')
+          }
+        );
+
+        const now = Date.now();
+
+        const snapshotTime =
+          Math.floor(now / 600000) *
+          600000;
+
+        const channelIds = [];
+
+        for (const x of details?.items || []) {
+          const views = Number(
+            x.statistics?.viewCount || 0
+          );
+
+          const channelId =
+            x.snippet?.channelId || '';
+
+          if (channelId) {
+            channelIds.push(channelId);
+          }
+
+          await db.query(`
+            INSERT INTO videos(
+              id,
+              title,
+              channel,
+              channel_id,
+              region,
+              thumbnail,
+              publishedAt,
+              duration,
+              category_id,
+              china_discovered,
+              china_source,
+              views,
+              lastSeen
+            )
+            VALUES(
+              $1,$2,$3,$4,$5,$6,$7,
+              $8,$9,$10,$11,$12,$13
+            )
+            ON CONFLICT(id) DO UPDATE SET
+              title=EXCLUDED.title,
+              channel=EXCLUDED.channel,
+              channel_id=EXCLUDED.channel_id,
+              thumbnail=EXCLUDED.thumbnail,
+              publishedAt=EXCLUDED.publishedAt,
+              duration=EXCLUDED.duration,
+              category_id=EXCLUDED.category_id,
+              china_discovered=TRUE,
+              china_source=EXCLUDED.china_source,
+              views=EXCLUDED.views,
+              lastSeen=EXCLUDED.lastSeen
+          `, [
+            x.id,
+            x.snippet?.title || '',
+            x.snippet?.channelTitle || '',
+            channelId,
+            'CN',
+            x.snippet?.thumbnails?.medium?.url || '',
+            x.snippet?.publishedAt || '',
+            x.contentDetails?.duration || '',
+            x.snippet?.categoryId || '',
+            true,
+            query,
+            views,
+            now
+          ]);
+
+          await db.query(`
+            INSERT INTO snapshots(
+              videoId,
+              ts,
+              views
+            )
+            VALUES($1,$2,$3)
+            ON CONFLICT(videoId,ts)
+            DO UPDATE SET
+              views=EXCLUDED.views
+          `, [
+            x.id,
+            snapshotTime,
+            views
+          ]);
+        }
+
+        await refreshChannels(
+          [...new Set(channelIds)]
+        );
+      }
+
+      const nextIndex = i + 1;
+
+      await db.query(`
+        UPDATE china_discovery_state
+        SET
+          next_index = $1,
+          last_run = $2
+        WHERE id = 1
+      `, [
+        nextIndex,
+        Date.now()
+      ]);
+
+    } catch (error) {
+      console.error(
+        '중국 자동수집 오류:',
+        query,
+        error.message
+      );
+
+      // 오류가 난 검색어에서 멈춰서
+      // 다음 실행 때 다시 이어서 시도한다.
+      break;
+    }
+  }
+
+  const finalState = await db.query(`
+    SELECT next_index
+    FROM china_discovery_state
+    WHERE id = 1
+  `);
+
+  if (
+    Number(finalState.rows[0]?.next_index || 0) >=
+    chinaDiscoveryQueries.length
+  ) {
+    await db.query(`
+      UPDATE china_discovery_state
+      SET
+        next_index = 0,
+        initial_completed = TRUE,
+        last_run = $1
+      WHERE id = 1
+    `, [Date.now()]);
+
+    console.log(
+      '중국 검색어 초기 전체 수집 완료'
+    );
+  }
+}
 async function refreshTrackedVideos() {
   const result = await db.query(`
     SELECT id
@@ -1591,6 +1853,8 @@ const limit = Math.min(
   v.publishedAt AS "publishedAt",
   v.duration,
   v.category_id,
+  v.china_discovered,
+  v.china_source,
   v.views,
   v.lastSeen AS "lastSeen",
 
@@ -1698,19 +1962,24 @@ GREATEST(
     x.channel
   ),
   
-  chinaRelated: isChinaRelated(
-  x.title,
-  x.channel
-),
+  chinaRelated:
+  Boolean(x.china_discovered) ||
+  isChinaRelated(
+    x.title,
+    x.channel
+  ),
+
+chinaSource:
+  x.china_source || '',
 
 chinaCategory: getChinaCategory(
   x.title,
-  x.channel
+  `${x.channel} ${x.china_source || ''}`
 ),
 
 chinaPlatform: getChinaPlatform(
   x.title,
-  x.channel
+  `${x.channel} ${x.china_source || ''}`
 ),
         
         lastSeen: Number(x.lastSeen),
@@ -1812,6 +2081,7 @@ async function automaticCollection() {
     // 이미 발견된 영상은 10분마다 다시 조회해
     // 실제 조회수 상승 스냅샷을 쌓는다.
     await refreshTrackedVideos();
+    await discoverChinaVideos();
 
     // 새 급상승 후보는 국가를 나눠 순환 발견한다.
     const batch = [];
