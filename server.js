@@ -36,54 +36,7 @@ const regions = [
 function getSimpleCategory(categoryId, title = '', channel = '') {
   const text =
     `${title} ${channel}`.toLowerCase();
-  function isChinaRelated(title = '', channel = '') {
-  const text =
-    `${title} ${channel}`.toLowerCase();
 
-  const chinaSignals = [
-    '中国',
-    '中國',
-    '中国大陆',
-    '中國大陸',
-    '北京',
-    '上海',
-    '深圳',
-    '广州',
-    '廣州',
-    '杭州',
-    '成都',
-    '重庆',
-    '重慶',
-    '武汉',
-    '武漢',
-    '南京',
-    '西安',
-
-    '抖音',
-    'douyin',
-
-    '哔哩哔哩',
-    '嗶哩嗶哩',
-    'bilibili',
-
-    '小红书',
-    '小紅書',
-    'xiaohongshu',
-
-    '微博',
-    'weibo',
-
-    'china',
-    'chinese',
-    'beijing',
-    'shanghai',
-    'shenzhen'
-  ];
-
-  return chinaSignals.some(
-    signal => text.includes(signal)
-  );
-}
 
   // 세부 카테고리는 제목/채널명으로 먼저 보정
   const economyKoreanSignals = [
@@ -166,6 +119,54 @@ if (hasEconomyKorean || hasEconomyEnglish) {
   };
 
   return categoryMap[String(categoryId)] || 'entertainment';
+}
+function isChinaRelated(title = '', channel = '') {
+  const text =
+    `${title} ${channel}`.toLowerCase();
+
+  const chinaSignals = [
+    '中国',
+    '中國',
+    '中国大陆',
+    '中國大陸',
+    '北京',
+    '上海',
+    '深圳',
+    '广州',
+    '廣州',
+    '杭州',
+    '成都',
+    '重庆',
+    '重慶',
+    '武汉',
+    '武漢',
+    '南京',
+    '西安',
+
+    '抖音',
+    'douyin',
+
+    '哔哩哔哩',
+    '嗶哩嗶哩',
+    'bilibili',
+
+    '小红书',
+    '小紅書',
+    'xiaohongshu',
+
+    '微博',
+    'weibo',
+
+    'china',
+    'chinese',
+    'beijing',
+    'shanghai',
+    'shenzhen'
+  ];
+
+  return chinaSignals.some(
+    signal => text.includes(signal)
+  );
 }
 async function initDB() {
   await db.query(`
@@ -1627,6 +1628,11 @@ GREATEST(
     x.title,
     x.channel
   ),
+  
+  chinaRelated: isChinaRelated(
+  x.title,
+  x.channel
+  ),
         
         lastSeen: Number(x.lastSeen),
         d10,
@@ -1661,7 +1667,14 @@ if (category !== 'all') {
     x => x.category === category
   );
 }
+const chinaOnly =
+  String(req.query.china || 'false') === 'true';
 
+if (chinaOnly) {
+  rows = rows.filter(
+    x => x.chinaRelated === true
+  );
+}
     rows.sort(
       (a, b) =>
         Number(b[metric] || 0) -
