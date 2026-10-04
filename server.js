@@ -341,15 +341,20 @@ await db.query(`
     id INTEGER PRIMARY KEY,
     next_index INTEGER NOT NULL DEFAULT 0,
     initial_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    viewcount_seeded BOOLEAN NOT NULL DEFAULT FALSE,
     last_run BIGINT DEFAULT 0
   )
 `);
-
+await db.query(`
+  ALTER TABLE china_discovery_state
+  ADD COLUMN IF NOT EXISTS viewcount_seeded BOOLEAN NOT NULL DEFAULT FALSE
+`);
 await db.query(`
   INSERT INTO china_discovery_state(
     id,
     next_index,
     initial_completed,
+    viewcount_seeded,
     last_run
   )
   VALUES(1, 0, FALSE, 0)
@@ -692,6 +697,7 @@ async function discoverChinaVideos() {
     SELECT
       next_index,
       initial_completed,
+      viewcount_seeded,
       last_run
     FROM china_discovery_state
     WHERE id = 1
@@ -702,14 +708,20 @@ async function discoverChinaVideos() {
 
   if (!state) return;
 
-  let startIndex =
-    Number(state.next_index || 0);
+  const needsViewCountSeed =
+  !Boolean(state.viewcount_seeded);
 
-  // 처음 수집이 이미 끝났다면 여기서는 다시 전체 수집하지 않는다.
-  let endIndex =
-  chinaDiscoveryQueries.length;
+let startIndex =
+  needsViewCountSeed
+    ? 0
+    : Number(state.next_index || 0);
 
-if (state.initial_completed) {
+let endIndex =
+  needsViewCountSeed
+    ? chinaDiscoveryQueries.length
+    : startIndex + 1;
+
+if (!needsViewCountSeed) {
   const intervalMinutes = Math.max(
     Number(
       process.env.CHINA_DISCOVERY_INTERVAL_MINUTES
@@ -717,6 +729,26 @@ if (state.initial_completed) {
     30
   );
 
+  const lastRun =
+    Number(state.last_run || 0);
+
+  const intervalMs =
+    intervalMinutes * 60 * 1000;
+
+  if (
+    Date.now() - lastRun <
+    intervalMs
+  ) {
+    return;
+  }
+
+  startIndex =
+    startIndex %
+    chinaDiscoveryQueries.length;
+
+  endIndex =
+    startIndex + 1;
+}
   const lastRun =
     Number(state.last_run || 0);
 
@@ -768,7 +800,7 @@ if (state.initial_completed) {
           part: 'snippet',
           q: query,
           type: 'video',
-          order: 'date',
+          order: needsViewCountSeed ? 'viewCount' : 'date',
           maxResults: String(maxResults)
         }
       );
@@ -916,6 +948,7 @@ if (state.initial_completed) {
     await db.query(`
       UPDATE china_discovery_state
       SET
+        viewcount_seeded = TRUE,
         next_index = 0,
         initial_completed = TRUE,
         last_run = $1
