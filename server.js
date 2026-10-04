@@ -1867,6 +1867,22 @@ app.get('/api/channel-analysis/:channelId', async (req, res) => {
 app.get('/api/rankings', async (req, res) => {
   try {
     const user = await getUser(req);
+    if (String(req.query.china || 'false') === 'true') {
+  const plan = String(user?.plan || '').toUpperCase();
+
+  const canUseChina =
+    plan === 'OWNER' ||
+    (
+      plan === 'BUSINESS' &&
+      user?.subscription_status === 'active'
+    );
+
+  if (!canUseChina) {
+    return res.status(403).json({
+      error: '중국 분석은 BUSINESS 요금제 이상에서 사용할 수 있습니다.'
+    });
+  }
+}
     
     const region =
       String(req.query.region || 'ALL');
