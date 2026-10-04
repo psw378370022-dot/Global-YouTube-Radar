@@ -253,9 +253,21 @@ async function initDB() {
   `);
 await db.query(`
   ALTER TABLE videos
-  ADD COLUMN IF NOT EXISTS channel_id TEXT,
+  ADD COLUMN IF NOT EXISTS channel_id TEXT
+`);
+
+await db.query(`
+  ALTER TABLE videos
   ADD COLUMN IF NOT EXISTS category_id TEXT
-  ADD COLUMN IF NOT EXISTS china_discovered BOOLEAN NOT NULL DEFAULT FALSE,
+`);
+
+await db.query(`
+  ALTER TABLE videos
+  ADD COLUMN IF NOT EXISTS china_discovered BOOLEAN NOT NULL DEFAULT FALSE
+`);
+
+await db.query(`
+  ALTER TABLE videos
   ADD COLUMN IF NOT EXISTS china_source TEXT
 `);
 
