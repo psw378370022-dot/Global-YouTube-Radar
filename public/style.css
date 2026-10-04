@@ -1019,3 +1019,40 @@ footer small{
   font-weight:500;
   white-space:nowrap;
 }
+
+.china-controls{
+  display:grid;
+  grid-template-columns:180px 220px minmax(260px,1fr);
+  gap:10px;
+  margin:14px 0 18px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#0d1422;
+}
+
+.china-controls select,
+.china-controls input{
+  width:100%;
+  min-height:44px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#111a2b;
+  color:var(--text);
+  font-size:14px;
+}
+
+.china-controls input::placeholder{
+  color:var(--muted);
+}
+
+.china-controls.hidden{
+  display:none;
+}
+
+@media(max-width:800px){
+  .china-controls{
+    grid-template-columns:1fr;
+  }
+}
