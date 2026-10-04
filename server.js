@@ -2147,6 +2147,9 @@ async function start() {
         `Global YouTube Radar running on port ${port}`
       );
     });
+
+automaticCollection();
+
   } catch (error) {
     console.error(
       '서버 시작 실패:',
