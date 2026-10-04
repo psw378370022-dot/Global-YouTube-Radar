@@ -709,66 +709,66 @@ async function discoverChinaVideos() {
   if (!state) return;
 
   const needsViewCountSeed =
-  !Boolean(state.viewcount_seeded);
+    !Boolean(state.viewcount_seeded);
 
-let startIndex =
-  needsViewCountSeed
-    ? 0
-    : Number(state.next_index || 0);
+  let startIndex =
+    Number(state.next_index || 0);
 
-let endIndex =
-  needsViewCountSeed
-    ? chinaDiscoveryQueries.length
-    : startIndex + 1;
-
-if (!needsViewCountSeed) {
-  const intervalMinutes = Math.max(
-    Number(
-      process.env.CHINA_DISCOVERY_INTERVAL_MINUTES
-    ) || 120,
-    30
-  );
-
-  const lastRun =
-    Number(state.last_run || 0);
-
-  const intervalMs =
-    intervalMinutes * 60 * 1000;
-
+  // 기존 초기수집은 완료됐지만
+  // 조회수순 재수집은 처음 시작하는 경우
   if (
-    Date.now() - lastRun <
-    intervalMs
+    needsViewCountSeed &&
+    Boolean(state.initial_completed)
   ) {
-    return;
+    startIndex = 0;
+
+    await db.query(`
+      UPDATE china_discovery_state
+      SET
+        next_index = 0,
+        initial_completed = FALSE
+      WHERE id = 1
+    `);
   }
 
-  startIndex =
-    startIndex %
-    chinaDiscoveryQueries.length;
+  let endIndex;
 
-  endIndex =
-    startIndex + 1;
-}
-  const lastRun =
-    Number(state.last_run || 0);
+  if (needsViewCountSeed) {
+    // 조회수 높은 영상 확보를 위해
+    // 40개 검색어 전체를 한 번 순회
+    endIndex =
+      chinaDiscoveryQueries.length;
 
-  const intervalMs =
-    intervalMinutes * 60 * 1000;
+  } else {
+    // 조회수순 초기수집 완료 후에는
+    // 설정된 시간마다 검색어 하나씩 최신순 탐색
+    const intervalMinutes = Math.max(
+      Number(
+        process.env.CHINA_DISCOVERY_INTERVAL_MINUTES
+      ) || 120,
+      30
+    );
 
-  if (
-    Date.now() - lastRun <
-    intervalMs
-  ) {
-    return;
+    const lastRun =
+      Number(state.last_run || 0);
+
+    const intervalMs =
+      intervalMinutes * 60 * 1000;
+
+    if (
+      Date.now() - lastRun <
+      intervalMs
+    ) {
+      return;
+    }
+
+    startIndex =
+      startIndex %
+      chinaDiscoveryQueries.length;
+
+    endIndex =
+      startIndex + 1;
   }
-
-  startIndex =
-    startIndex %
-    chinaDiscoveryQueries.length;
-
-  endIndex =
-    startIndex + 1;
-}
 
   const maxResults = Math.min(
     Math.max(
@@ -781,10 +781,10 @@ if (!needsViewCountSeed) {
   );
 
   for (
-  let i = startIndex;
-  i < endIndex;
-  i++
-) {
+    let i = startIndex;
+    i < endIndex;
+    i++
+  ) {
     const query =
       chinaDiscoveryQueries[i];
 
@@ -800,14 +800,22 @@ if (!needsViewCountSeed) {
           part: 'snippet',
           q: query,
           type: 'video',
-          order: needsViewCountSeed ? 'viewCount' : 'date',
+
+          order:
+            needsViewCountSeed
+              ? 'viewCount'
+              : 'date',
+
           maxResults: String(maxResults)
         }
       );
 
-      const ids = (searchData?.items || [])
-        .map(item => item.id?.videoId)
-        .filter(Boolean);
+      const ids =
+        (searchData?.items || [])
+          .map(
+            item => item.id?.videoId
+          )
+          .filter(Boolean);
 
       if (ids.length) {
         const details = await yt(
@@ -815,6 +823,7 @@ if (!needsViewCountSeed) {
           {
             part:
               'snippet,statistics,contentDetails',
+
             id: ids.join(',')
           }
         );
@@ -827,7 +836,9 @@ if (!needsViewCountSeed) {
 
         const channelIds = [];
 
-        for (const x of details?.items || []) {
+        for (
+          const x of details?.items || []
+        ) {
           const views = Number(
             x.statistics?.viewCount || 0
           );
@@ -859,7 +870,8 @@ if (!needsViewCountSeed) {
               $1,$2,$3,$4,$5,$6,$7,
               $8,$9,$10,$11,$12,$13
             )
-            ON CONFLICT(id) DO UPDATE SET
+            ON CONFLICT(id)
+            DO UPDATE SET
               title=EXCLUDED.title,
               channel=EXCLUDED.channel,
               channel_id=EXCLUDED.channel_id,
@@ -877,7 +889,8 @@ if (!needsViewCountSeed) {
             x.snippet?.channelTitle || '',
             channelId,
             'CN',
-            x.snippet?.thumbnails?.medium?.url || '',
+            x.snippet?.thumbnails
+              ?.medium?.url || '',
             x.snippet?.publishedAt || '',
             x.contentDetails?.duration || '',
             x.snippet?.categoryId || '',
@@ -904,9 +917,14 @@ if (!needsViewCountSeed) {
           ]);
         }
 
-        await refreshChannels(
-          [...new Set(channelIds)]
-        );
+        const uniqueChannelIds =
+          [...new Set(channelIds)];
+
+        if (uniqueChannelIds.length) {
+          await refreshChannels(
+            uniqueChannelIds
+          );
+        }
       }
 
       const nextIndex = i + 1;
@@ -929,8 +947,7 @@ if (!needsViewCountSeed) {
         error.message
       );
 
-      // 오류가 난 검색어에서 멈춰서
-      // 다음 실행 때 다시 이어서 시도한다.
+      // 실패한 검색어부터 다음 실행 때 재시도
       break;
     }
   }
@@ -942,24 +959,28 @@ if (!needsViewCountSeed) {
   `);
 
   if (
-    Number(finalState.rows[0]?.next_index || 0) >=
-    chinaDiscoveryQueries.length
+    Number(
+      finalState.rows[0]?.next_index || 0
+    ) >= chinaDiscoveryQueries.length
   ) {
     await db.query(`
       UPDATE china_discovery_state
       SET
         viewcount_seeded = TRUE,
-        next_index = 0,
         initial_completed = TRUE,
+        next_index = 0,
         last_run = $1
       WHERE id = 1
-    `, [Date.now()]);
+    `, [
+      Date.now()
+    ]);
 
     console.log(
-      '중국 검색어 초기 전체 수집 완료'
+      '중국 조회수순 초기 전체 수집 완료'
     );
   }
 }
+
 async function refreshTrackedVideos() {
   const result = await db.query(`
     SELECT id
