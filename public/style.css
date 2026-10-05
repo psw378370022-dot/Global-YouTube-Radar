@@ -1056,3 +1056,40 @@ footer small{
     grid-template-columns:1fr;
   }
 }
+
+.china-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:22px;
+  margin-left:6px;
+  padding:2px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.2;
+  white-space:nowrap;
+  vertical-align:middle;
+}
+
+.china-category-badge{
+  color:#ff9aaa;
+  background:rgba(255,77,101,.12);
+  border-color:rgba(255,77,101,.35);
+}
+
+.china-platform-badge{
+  color:#93c5fd;
+  background:rgba(59,130,246,.12);
+  border-color:rgba(59,130,246,.35);
+}
+
+@media(max-width:720px){
+  .china-badge{
+    margin-top:4px;
+    margin-left:4px;
+    padding:2px 7px;
+    font-size:10px;
+  }
+}
