@@ -623,7 +623,11 @@ function render(rows) {
     ${
       ({
         music: '🎵 음악',
-        entertainment: '🎬 엔터',
+        entertainment: '🎭 엔터',
+        movie: '🎬 영화',
+        variety: '🎤 예능',
+        celebrity: '⭐ 연예',
+        animation: '🎞️ 애니메이션',
         gaming: '🎮 게임',
         sports: '⚽ 스포츠',
         news: '📰 뉴스',
@@ -633,7 +637,7 @@ function render(rows) {
         life: '🏠 라이프',
         beauty: '💄 뷰티/패션',
         food_travel: '🍜 음식/여행'
-      })[x.category] || '🎬 엔터'
+      })[x.category] || '🎭 엔터'
     }
   </span>
 </div>
