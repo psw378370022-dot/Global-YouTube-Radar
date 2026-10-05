@@ -50,7 +50,29 @@ if (
 ) {
   return 'animation';
 }
+// 영화 관련 콘텐츠
+if (
+  /영화|극장판|시네마|映画|电影|電影|影片/.test(text) ||
+  /\b(?:movie|movies|film|films|cinema)\b/i.test(text)
+) {
+  return 'movie';
+}
 
+// 예능·리얼리티·토크쇼 관련 콘텐츠
+if (
+  /예능|버라이어티|리얼리티쇼|토크쇼|综艺|綜藝|真人秀/.test(text) ||
+  /\b(?:variety show|reality show|talk show|game show)\b/i.test(text)
+) {
+  return 'variety';
+}
+
+// 연예인·배우·셀럽 관련 콘텐츠
+if (
+  /연예인|연예뉴스|연예계|배우|셀럽|明星|艺人|藝人|演员|演員|娱乐圈|娛樂圈/.test(text) ||
+  /\b(?:celebrity|celeb|actor|actress|showbiz)\b/i.test(text)
+) {
+  return 'celebrity';
+}
   // 세부 카테고리는 제목/채널명으로 먼저 보정
   const economyKoreanSignals = [
   '주식',
@@ -208,9 +230,21 @@ function getChinaCategory(title = '', channel = '') {
     return 'variety';
   }
 
-  if (/明星|娱乐圈|娱乐|艺人|演员|celebrity|star/.test(text)) {
-    return 'celebrity';
-  }
+  // 연예인·배우·아이돌 중심
+if (
+  /明星|艺人|藝人|演员|演員|偶像/.test(text) ||
+  /\b(?:celebrity|celeb|actor|actress|idol|star)\b/i.test(text)
+) {
+  return 'celebrity';
+}
+
+// 연예산업·엔터테인먼트 전반
+if (
+  /娱乐圈|娛樂圈|娱乐|娛樂/.test(text) ||
+  /\b(?:entertainment|showbiz)\b/i.test(text)
+) {
+  return 'entertainment';
+}
 
   if (/音乐|歌曲|神曲|歌手|mv|music|song/.test(text)) {
     return 'music';
