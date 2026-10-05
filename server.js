@@ -43,7 +43,13 @@ const chinaDiscoveryQueries = String(
 function getSimpleCategory(categoryId, title = '', channel = '') {
   const text =
     `${title} ${channel}`.toLowerCase();
-
+// 애니메이션 관련 제목·채널명을 우선 분류
+if (
+  /애니메이션|애니메|만화영화|アニメ|动画|動畫|动漫|動漫|国漫|國漫/.test(text) ||
+  /\b(?:anime|animations?|animated|cartoons?|donghua)\b/i.test(text)
+) {
+  return 'animation';
+}
 
   // 세부 카테고리는 제목/채널명으로 먼저 보정
   const economyKoreanSignals = [
@@ -178,6 +184,13 @@ function isChinaRelated(title = '', channel = '') {
 function getChinaCategory(title = '', channel = '') {
   const text =
     `${title} ${channel}`.toLowerCase();
+    // 애니메이션 관련 콘텐츠를 먼저 분류
+  if (
+    /애니메이션|애니메|만화영화|アニメ|动画|動畫|动漫|動漫|国漫|國漫/.test(text) ||
+    /\b(?:anime|animations?|animated|cartoons?|donghua)\b/i.test(text)
+  ) {
+    return 'animation';
+  }
 
   if (/新闻|热点|时事|热搜|央视|news|breaking/.test(text)) {
     return 'news';
