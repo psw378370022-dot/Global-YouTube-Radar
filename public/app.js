@@ -242,7 +242,7 @@ async function logout() {
   currentUser = null;
   updateAccount();
 }
-
+let statusCache = null;
 async function load() {
   const status = $('#status');
 
@@ -280,10 +280,17 @@ if (rankingMode === 'china') {
     $('#chinaSearch')?.value.trim() || ''
   );
 }
-    const [st, rows] = await Promise.all([
-      api('/api/status'),
-      api('/api/rankings?' + qs.toString())
-    ]);
+    const statusPromise = statusCache
+  ? Promise.resolve(statusCache)
+  : api('/api/status').then(data => {
+      statusCache = data;
+      return data;
+    });
+
+const [st, rows] = await Promise.all([
+  statusPromise,
+  api('/api/rankings?' + qs.toString())
+]);
 
     $('#trackedCount').textContent =
       Number(st.tracked || 0).toLocaleString();
