@@ -1911,6 +1911,59 @@ app.get('/api/channel-analysis/:channelId', async (req, res) => {
     });
   }
 });
+const rankingsCache = new Map();
+
+const RANKINGS_CACHE_TTL_MS =
+  20 * 1000;
+
+const RANKINGS_CACHE_MAX_ITEMS =
+  200;
+
+function getRankingCache(key) {
+  const cached =
+    rankingsCache.get(key);
+
+  if (!cached) {
+    return null;
+  }
+
+  if (
+    Date.now() - cached.createdAt >=
+    RANKINGS_CACHE_TTL_MS
+  ) {
+    rankingsCache.delete(key);
+    return null;
+  }
+
+  return cached.data;
+}
+
+function setRankingCache(key, data) {
+  if (rankingsCache.has(key)) {
+    rankingsCache.delete(key);
+  }
+
+  while (
+    rankingsCache.size >=
+    RANKINGS_CACHE_MAX_ITEMS
+  ) {
+    const oldestKey =
+      rankingsCache.keys().next().value;
+
+    if (!oldestKey) break;
+
+    rankingsCache.delete(oldestKey);
+  }
+
+  rankingsCache.set(key, {
+    createdAt: Date.now(),
+    data
+  });
+}
+
+function clearRankingCache() {
+  rankingsCache.clear();
+}
 app.get('/api/rankings', async (req, res) => {
   try {
     const user = await getUser(req);
