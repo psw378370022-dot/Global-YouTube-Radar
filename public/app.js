@@ -434,25 +434,66 @@ function render(rows) {
             >
               ${title}
             </a>
-
-            <div class="sub">
+        
+  <div class="sub">
   ${channel}
   · ${region}
-  · ${
-      {
-        music: '🎵 음악',
-        entertainment: '🎬 엔터',
-        gaming: '🎮 게임',
-        sports: '⚽ 스포츠',
-        news: '📰 뉴스',
-        economy: '💰 경제',
-        tech: '🤖 테크/AI',
-        education: '📚 교육',
-        life: '🏠 라이프',
-        beauty: '💄 뷰티/패션',
-        food_travel: '🍜 음식/여행'
-      }[x.category] || '🎬 엔터'
-    }
+
+  ${
+    rankingMode === 'china'
+      ? `
+        <span class="china-badge china-category-badge">
+          ${
+            {
+              news: '📰 뉴스',
+              drama: '📺 드라마',
+              movie: '🎬 영화',
+              variety: '🎤 예능',
+              celebrity: '⭐ 연예',
+              entertainment: '🎭 엔터',
+              music: '🎵 음악',
+              gaming: '🎮 게임',
+              animation: '🎞️ 애니메이션',
+              other: '📁 기타'
+            }[x.chinaCategory] || '📁 기타'
+          }
+        </span>
+
+        <span class="china-badge china-platform-badge">
+          ${
+            {
+              douyin: 'Douyin',
+              bilibili: 'Bilibili',
+              xiaohongshu: 'Xiaohongshu',
+              weibo: 'Weibo',
+              other: '기타'
+            }[x.chinaPlatform] || '기타'
+          }
+        </span>
+      `
+      : `
+        · ${
+          {
+            music: '🎵 음악',
+            entertainment: '🎭 엔터',
+            movie: '🎬 영화',
+            variety: '🎤 예능',
+            celebrity: '⭐ 연예',
+            gaming: '🎮 게임',
+            animation: '🎞️ 애니메이션',
+            sports: '⚽ 스포츠',
+            news: '📰 뉴스',
+            economy: '💰 경제',
+            tech: '🤖 테크/AI',
+            education: '📚 교육',
+            life: '🏠 라이프',
+            beauty: '💄 뷰티/패션',
+            food_travel: '🍜 음식/여행'
+          }[x.category] || '🎭 엔터'
+        }
+      `
+  }
+
   · ${x.isShort ? 'Shorts 추정' : 'Video'}
 </div>
           </div>
