@@ -1008,7 +1008,7 @@ $('#refresh').addEventListener(
               : $('#region').value
         })
       });
-
+      statusCache = null;
       await load();
     } catch (error) {
       $('#status').textContent =
