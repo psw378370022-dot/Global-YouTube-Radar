@@ -523,17 +523,22 @@ function getPlanAccess(user) {
       .trim()
       .toLowerCase();
 
-  // OWNER는 결제 상태와 관계없이 모든 권한 허용
   if (rawPlan === 'OWNER') {
     return {
       plan: 'OWNER',
       maxLimit: 500,
-      minPeriodMinutes: 10,
+      allowedMetrics: [
+        'd10',
+        'd1',
+        'd6',
+        'd24',
+        'd7',
+        'velocity'
+      ],
       canUseChina: true
     };
   }
 
-  // 유료 요금제인데 구독이 active가 아니면 FREE로 처리
   const activePlan =
     subscriptionStatus === 'active'
       ? rawPlan
@@ -543,7 +548,14 @@ function getPlanAccess(user) {
     return {
       plan: 'BUSINESS',
       maxLimit: 500,
-      minPeriodMinutes: 10,
+      allowedMetrics: [
+        'd10',
+        'd1',
+        'd6',
+        'd24',
+        'd7',
+        'velocity'
+      ],
       canUseChina: true
     };
   }
@@ -551,8 +563,13 @@ function getPlanAccess(user) {
   if (activePlan === 'PRO_PLUS') {
     return {
       plan: 'PRO_PLUS',
-      maxLimit: 500,
-      minPeriodMinutes: 60,
+      maxLimit: 300,
+      allowedMetrics: [
+        'd1',
+        'd6',
+        'd24',
+        'd7'
+      ],
       canUseChina: false
     };
   }
@@ -560,8 +577,11 @@ function getPlanAccess(user) {
   if (activePlan === 'PRO') {
     return {
       plan: 'PRO',
-      maxLimit: 500,
-      minPeriodMinutes: 360,
+      maxLimit: 200,
+      allowedMetrics: [
+        'd6',
+        'd24'
+      ],
       canUseChina: false
     };
   }
@@ -569,22 +589,18 @@ function getPlanAccess(user) {
   return {
     plan: 'FREE',
     maxLimit: 100,
-    minPeriodMinutes: 1440,
+    allowedMetrics: [
+      'd24'
+    ],
     canUseChina: false
   };
 }
 
-function canUsePeriod(access, period) {
-  const minutes = {
-    d10: 10,
-    d1: 60,
-    d6: 360,
-    d24: 1440,
-    d7: 10080
-  }[period];
-
-  return minutes >= access.minPeriodMinutes;
+function canUsePeriod(access, metric) {
+  return Array.isArray(access?.allowedMetrics) &&
+    access.allowedMetrics.includes(metric);
 }
+
 async function createSession(res, userId) {
   const token = crypto.randomBytes(32).toString('hex');
   const tokenHash = hashToken(token);
@@ -2003,13 +2019,8 @@ const requestedMetric =
     ? req.query.metric
     : 'd24';
     
-const metricPeriod =
-  requestedMetric === 'velocity'
-    ? 'd1'
-    : requestedMetric;
-
-const metric =
-  canUsePeriod(access, metricPeriod)
+  const metric =
+  canUsePeriod(access, requestedMetric)
     ? requestedMetric
     : 'd24';
     
@@ -2031,7 +2042,7 @@ const normalizedQuery =
 const cacheKey = [
   access.plan,
   access.maxLimit,
-  access.minPeriodMinutes,
+  access.allowedMetrics.join(','),
   normalizedQuery
 ].join('|');
 
