@@ -1065,28 +1065,7 @@ els.forEach(id => {
     );
   }
 });
-const limitSelect = $('#limit');
 
-if (limitSelect) {
-  limitSelect.addEventListener('change', () => {
-    const selected = Number(limitSelect.value);
-
-    const isPro =
-      currentUser &&
-      currentUser.plan !== 'FREE' &&
-      currentUser.subscription_status === 'active';
-
-    if (selected > 100 && !isPro) {
-      alert(
-        'TOP 200~500은 PRO 기능입니다. FREE 회원은 TOP 100까지 이용할 수 있습니다.'
-      );
-
-      limitSelect.value = '100';
-    }
-
-    load();
-  });
-}
 $('#search').addEventListener(
   'input',
   scheduleLoad
