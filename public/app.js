@@ -55,7 +55,111 @@ async function loadUser() {
 
   updateAccount();
 }
+function getClientPlanAccess() {
+  const rawPlan =
+    String(currentUser?.plan || 'FREE')
+      .trim()
+      .toUpperCase();
 
+  const subscriptionStatus =
+    String(currentUser?.subscription_status || '')
+      .trim()
+      .toLowerCase();
+
+  const activePlan =
+    rawPlan === 'OWNER'
+      ? 'OWNER'
+      : subscriptionStatus === 'active'
+        ? rawPlan
+        : 'FREE';
+
+  const accessTable = {
+    FREE: {
+      allowedMetrics: ['d24'],
+      maxLimit: 100
+    },
+
+    PRO: {
+      allowedMetrics: ['d6', 'd24'],
+      maxLimit: 200
+    },
+
+    PRO_PLUS: {
+      allowedMetrics: ['d1', 'd6', 'd24', 'd7'],
+      maxLimit: 300
+    },
+
+    BUSINESS: {
+      allowedMetrics: [
+        'd10',
+        'd1',
+        'd6',
+        'd24',
+        'd7',
+        'velocity'
+      ],
+      maxLimit: 500
+    },
+
+    OWNER: {
+      allowedMetrics: [
+        'd10',
+        'd1',
+        'd6',
+        'd24',
+        'd7',
+        'velocity'
+      ],
+      maxLimit: 500
+    }
+  };
+
+  return accessTable[activePlan] || accessTable.FREE;
+}
+
+function applyPlanControls() {
+  const access = getClientPlanAccess();
+
+  const metricSelect = $('#metric');
+
+  if (metricSelect) {
+    [...metricSelect.options].forEach(option => {
+      const allowed =
+        access.allowedMetrics.includes(option.value);
+
+      option.hidden = !allowed;
+      option.disabled = !allowed;
+    });
+
+    if (
+      !access.allowedMetrics.includes(
+        metricSelect.value
+      )
+    ) {
+      metricSelect.value = 'd24';
+    }
+  }
+
+  const limitSelect = $('#limit');
+
+  if (limitSelect) {
+    [...limitSelect.options].forEach(option => {
+      const allowed =
+        Number(option.value) <= access.maxLimit;
+
+      option.hidden = !allowed;
+      option.disabled = !allowed;
+    });
+
+    if (
+      Number(limitSelect.value) >
+      access.maxLimit
+    ) {
+      limitSelect.value =
+        String(access.maxLimit);
+    }
+  }
+}
 function updateAccount() {
   const planBadge = $('#planBadge');
   const userName = $('#userName');
