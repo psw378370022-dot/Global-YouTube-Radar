@@ -217,6 +217,7 @@ chinaTab.classList.toggle(
     specialAdminBtn.classList.add('hidden');
     chinaTab.classList.add('hidden');
   }
+applyPlanControls();
 }
 
 function openAuth(mode = 'login') {
