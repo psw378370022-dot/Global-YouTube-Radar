@@ -1365,7 +1365,9 @@ app.post('/api/refresh', async (req, res) => {
     for (const code of wanted) {
       await refreshRegion(code);
     }
-
+    
+    clearRankingCache();
+    
     res.json({
       ok: true,
       regions: wanted
@@ -2011,7 +2013,27 @@ const limit = Math.min(
   ),
   access.maxLimit
 );
+const normalizedQuery =
+  JSON.stringify(
+    Object.entries(req.query)
+      .sort(([a], [b]) =>
+        a.localeCompare(b)
+      )
+  );
 
+const cacheKey = [
+  access.plan,
+  access.maxLimit,
+  access.minPeriodMinutes,
+  normalizedQuery
+].join('|');
+
+const cachedRows =
+  getRankingCache(cacheKey);
+
+if (cachedRows) {
+  return res.json(cachedRows);
+}
     const params = [];
     let regionJoin = '';
 
@@ -2242,8 +2264,16 @@ if (chinaOnly) {
         Number(b[metric] || 0) -
         Number(a[metric] || 0)
     );
+const responseRows =
+  rows.slice(0, limit);
 
-    res.json(rows.slice(0, limit));
+setRankingCache(
+  cacheKey,
+  responseRows
+);
+
+return res.json(responseRows);
+    
   } catch (error) {
     console.error(error);
     res.status(500).json({
