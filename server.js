@@ -513,53 +513,64 @@ function canUseSpecialFeatures(user) {
 }
 
 function getPlanAccess(user) {
-  const plan = String(user?.plan || 'FREE').toUpperCase();
-  const active = user?.subscription_status === 'active';
+  const rawPlan =
+    String(user?.plan || 'FREE')
+      .trim()
+      .toUpperCase();
 
-  if (plan === 'OWNER') {
+  const subscriptionStatus =
+    String(user?.subscription_status || '')
+      .trim()
+      .toLowerCase();
+
+  // OWNER는 결제 상태와 관계없이 모든 권한 허용
+  if (rawPlan === 'OWNER') {
     return {
       plan: 'OWNER',
       maxLimit: 500,
-      minPeriodMinutes: 10
+      minPeriodMinutes: 10,
+      canUseChina: true
     };
   }
 
-  if (!active) {
-    return {
-      plan: 'FREE',
-      maxLimit: 100,
-      minPeriodMinutes: 1440
-    };
-  }
+  // 유료 요금제인데 구독이 active가 아니면 FREE로 처리
+  const activePlan =
+    subscriptionStatus === 'active'
+      ? rawPlan
+      : 'FREE';
 
-  if (plan === 'BUSINESS') {
+  if (activePlan === 'BUSINESS') {
     return {
       plan: 'BUSINESS',
       maxLimit: 500,
-      minPeriodMinutes: 10
+      minPeriodMinutes: 10,
+      canUseChina: true
     };
   }
 
-  if (plan === 'PRO_PLUS') {
+  if (activePlan === 'PRO_PLUS') {
     return {
       plan: 'PRO_PLUS',
       maxLimit: 500,
-      minPeriodMinutes: 60
+      minPeriodMinutes: 60,
+      canUseChina: false
     };
   }
 
-  if (plan === 'PRO') {
+  if (activePlan === 'PRO') {
     return {
       plan: 'PRO',
       maxLimit: 500,
-      minPeriodMinutes: 360
+      minPeriodMinutes: 360,
+      canUseChina: false
     };
   }
 
   return {
     plan: 'FREE',
     maxLimit: 100,
-    minPeriodMinutes: 1440
+    minPeriodMinutes: 1440,
+    canUseChina: false
   };
 }
 
@@ -1969,43 +1980,39 @@ function clearRankingCache() {
 app.get('/api/rankings', async (req, res) => {
   try {
     const user = await getUser(req);
-    if (String(req.query.china || 'false') === 'true') {
-  const plan = String(user?.plan || '').toUpperCase();
+    const access = getPlanAccess(user);
 
-  const canUseChina =
-    plan === 'OWNER' ||
-    (
-      plan === 'BUSINESS' &&
-      user?.subscription_status === 'active'
-    );
+    const chinaOnly =
+      String(req.query.china || 'false') === 'true';
 
-  if (!canUseChina) {
-    return res.status(403).json({
-      error: '중국 분석은 BUSINESS 요금제 이상에서 사용할 수 있습니다.'
-    });
-  }
-}
-    
+    if (
+      chinaOnly &&
+      !access.canUseChina
+    ) {
+      return res.status(403).json({
+        error: '중국 분석은 BUSINESS 요금제에서 사용할 수 있습니다.'
+      });
+    }
+
     const region =
-      String(req.query.region || 'ALL');
+  String(req.query.region || 'ALL');
 
-   const requestedMetric =
+const requestedMetric =
   ['d10', 'd1', 'd6', 'd24', 'd7', 'velocity']
     .includes(req.query.metric)
     ? req.query.metric
     : 'd24';
-
-const access = getPlanAccess(user);
-
+    
 const metricPeriod =
   requestedMetric === 'velocity'
     ? 'd1'
     : requestedMetric;
 
-const metric = canUsePeriod(access, metricPeriod)
-  ? requestedMetric
-  : 'd24';
-
+const metric =
+  canUsePeriod(access, metricPeriod)
+    ? requestedMetric
+    : 'd24';
+    
 const limit = Math.min(
   Math.max(
     Number(req.query.limit) || 100,
