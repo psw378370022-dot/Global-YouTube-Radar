@@ -2238,8 +2238,6 @@ if (category !== 'all') {
     x => x.category === category
   );
 }
-const chinaOnly =
-  String(req.query.china || 'false') === 'true';
 
 if (chinaOnly) {
   rows = rows.filter(
