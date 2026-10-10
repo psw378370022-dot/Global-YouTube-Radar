@@ -1227,9 +1227,9 @@ async function loadOwnerUsers() {
         escapeHtml(user.plan || 'FREE');
 
       const subscription =
-        escapeHtml(
-          user.subscription_status || 'inactive'
-        );
+  user.subscription_status === 'active'
+    ? '구독중'
+    : '미구독';
 
       const special =
         user.special_access
