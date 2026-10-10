@@ -715,11 +715,25 @@ const canShowChannelPeriod = period =>
         <div>순위</div>
         <div>채널</div>
         <div>총 구독자</div>
-        <div>10분 ↑</div>
-        <div>1시간 ↑</div>
-        <div>6시간 ↑</div>
-        <div>24시간 ↑</div>
-        <div>7일 ↑</div>
+        ${canShowChannelPeriod('d10') ? `
+  <div>10분 ↑</div>
+` : ''}
+
+${canShowChannelPeriod('d1') ? `
+  <div>1시간 ↑</div>
+` : ''}
+
+${canShowChannelPeriod('d6') ? `
+  <div>6시간 ↑</div>
+` : ''}
+
+${canShowChannelPeriod('d24') ? `
+  <div>24시간 ↑</div>
+` : ''}
+
+${canShowChannelPeriod('d7') ? `
+  <div>7일 ↑</div>
+` : ''}
         <div>총 조회수</div>
         <div>영상 수</div>
         <div>추정 월수익</div>
