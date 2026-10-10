@@ -626,7 +626,13 @@ const canShowPeriod = period =>
 
   · ${x.isShort ? 'Shorts 추정' : 'Video'}
 </div>
-          
+
+</div>
+
+<div class="num">
+  <span class="muted">현재 조회수</span>
+  <strong>${fmt(x.views)}</strong>
+</div>
             ${canShowPeriod('d10') ? `
   <div class="num">
     <span class="muted">10분</span>
