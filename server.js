@@ -1712,19 +1712,7 @@ if (category !== 'all') {
       sortMap[sort] ||
       sortMap.d24_subscribers;
 
-    if (metric === 'latest') {
-  rows.sort(
-    (a, b) =>
-      new Date(b.publishedAt || 0).getTime() -
-      new Date(a.publishedAt || 0).getTime()
-  );
-} else {
-  rows.sort(
-    (a, b) =>
-      Number(b[metric] || 0) -
-      Number(a[metric] || 0)
-  );
-}
+   
 
     res.json({
       limit,
@@ -2300,11 +2288,19 @@ if (chinaOnly) {
     );
   }
 }
-    rows.sort(
-      (a, b) =>
-        Number(b[metric] || 0) -
-        Number(a[metric] || 0)
-    );
+    if (metric === 'latest') {
+  rows.sort(
+    (a, b) =>
+      new Date(b.publishedAt || 0).getTime() -
+      new Date(a.publishedAt || 0).getTime()
+  );
+} else {
+  rows.sort(
+    (a, b) =>
+      Number(b[metric] || 0) -
+      Number(a[metric] || 0)
+  );
+}
 const responseRows =
   rows.slice(0, limit);
 
