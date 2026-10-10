@@ -122,23 +122,34 @@ function applyPlanControls() {
 
   const metricSelect = $('#metric');
 
-  if (metricSelect) {
-    [...metricSelect.options].forEach(option => {
-      const allowed =
-        access.allowedMetrics.includes(option.value);
+if (metricSelect) {
+  const isOwner =
+    String(currentUser?.plan || '')
+      .toUpperCase() === 'OWNER';
 
-      option.hidden = !allowed;
-      option.disabled = !allowed;
-    });
-
-    if (
-      !access.allowedMetrics.includes(
-        metricSelect.value
-      )
-    ) {
-      metricSelect.value = 'd24';
+  const canUseMetric = value => {
+    if (value === 'latest') {
+      return (
+        isOwner &&
+        rankingMode === 'china'
+      );
     }
+
+    return access.allowedMetrics.includes(value);
+  };
+
+  [...metricSelect.options].forEach(option => {
+    const allowed =
+      canUseMetric(option.value);
+
+    option.hidden = !allowed;
+    option.disabled = !allowed;
+  });
+
+  if (!canUseMetric(metricSelect.value)) {
+    metricSelect.value = 'd24';
   }
+}
 
   const limitSelect = $('#limit');
 
@@ -349,6 +360,7 @@ async function logout() {
 }
 let statusCache = null;
 async function load() {
+  applyPlanControls();
   const status = $('#status');
 
   try {
