@@ -1343,6 +1343,211 @@ app.post('/api/admin/special-access', async (req, res) => {
     });
   }
 });
+// OWNER 전용 회원 목록
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const user = await getUser(req);
+
+    if (
+      !user ||
+      String(user.plan || '').toUpperCase() !== 'OWNER'
+    ) {
+      return res.status(403).json({
+        error: 'OWNER만 회원 목록을 볼 수 있습니다.'
+      });
+    }
+
+    const result = await db.query(`
+      SELECT
+        id,
+        email,
+        nickname,
+        plan,
+        subscription_status,
+        special_access
+      FROM users
+      ORDER BY id DESC
+      LIMIT 200
+    `);
+
+    res.json({
+      users: result.rows
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: '회원 목록 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+
+// OWNER 전용 회원 1명 조회
+app.get('/api/admin/user', async (req, res) => {
+  try {
+    const user = await getUser(req);
+
+    if (
+      !user ||
+      String(user.plan || '').toUpperCase() !== 'OWNER'
+    ) {
+      return res.status(403).json({
+        error: 'OWNER만 회원 정보를 볼 수 있습니다.'
+      });
+    }
+
+    const email =
+      String(req.query.email || '')
+        .trim()
+        .toLowerCase();
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: '올바른 이메일을 입력해주세요.'
+      });
+    }
+
+    const result = await db.query(`
+      SELECT
+        id,
+        email,
+        nickname,
+        plan,
+        subscription_status,
+        special_access
+      FROM users
+      WHERE LOWER(email) = $1
+      LIMIT 1
+    `, [email]);
+
+    if (!result.rows[0]) {
+      return res.status(404).json({
+        error: '해당 회원을 찾을 수 없습니다.'
+      });
+    }
+
+    res.json({
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: '회원 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+
+// OWNER 전용 요금제 / 구독 상태 변경
+app.post('/api/admin/user-access', async (req, res) => {
+  try {
+    const user = await getUser(req);
+
+    if (
+      !user ||
+      String(user.plan || '').toUpperCase() !== 'OWNER'
+    ) {
+      return res.status(403).json({
+        error: 'OWNER만 회원 권한을 변경할 수 있습니다.'
+      });
+    }
+
+    const email =
+      String(req.body?.email || '')
+        .trim()
+        .toLowerCase();
+
+    const plan =
+      String(req.body?.plan || '')
+        .trim()
+        .toUpperCase();
+
+    const subscriptionStatus =
+      String(req.body?.subscription_status || '')
+        .trim()
+        .toLowerCase();
+
+    const allowedPlans = [
+      'FREE',
+      'PRO',
+      'PRO_PLUS',
+      'BUSINESS'
+    ];
+
+    const allowedStatuses = [
+      'active',
+      'inactive'
+    ];
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: '올바른 이메일을 입력해주세요.'
+      });
+    }
+
+    if (!allowedPlans.includes(plan)) {
+      return res.status(400).json({
+        error: '올바른 요금제를 선택해주세요.'
+      });
+    }
+
+    if (!allowedStatuses.includes(subscriptionStatus)) {
+      return res.status(400).json({
+        error: '올바른 구독 상태를 선택해주세요.'
+      });
+    }
+
+    if (
+      OWNER_EMAIL &&
+      email === OWNER_EMAIL
+    ) {
+      return res.status(400).json({
+        error: 'OWNER 계정의 요금제는 변경할 수 없습니다.'
+      });
+    }
+
+    const result = await db.query(`
+      UPDATE users
+      SET
+        plan = $1,
+        subscription_status = $2
+      WHERE LOWER(email) = $3
+      RETURNING
+        id,
+        email,
+        nickname,
+        plan,
+        subscription_status,
+        special_access
+    `, [
+      plan,
+      subscriptionStatus,
+      email
+    ]);
+
+    if (!result.rows[0]) {
+      return res.status(404).json({
+        error: '해당 회원을 찾을 수 없습니다.'
+      });
+    }
+
+    res.json({
+      ok: true,
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: '회원 권한 변경 중 오류가 발생했습니다.'
+    });
+  }
+});
 app.get('/api/status', async (req, res) => {
   try {
     const result = await db.query(
