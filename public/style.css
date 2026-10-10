@@ -1093,3 +1093,134 @@ footer small{
     font-size:10px;
   }
 }
+
+/* OWNER 회원 관리 */
+.owner-admin-card{
+  width:min(920px,94vw);
+  max-height:88vh;
+  overflow-y:auto;
+}
+
+.owner-admin-section,
+.owner-member-list-section{
+  margin-top:18px;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+
+.owner-admin-section h3,
+.owner-member-list-section h3{
+  margin:0 0 12px;
+}
+
+.owner-user-panel{
+  margin-top:16px;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+
+.owner-user-info{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+.owner-user-info span{
+  color:var(--muted);
+}
+
+.owner-admin-field{
+  margin-bottom:12px;
+}
+
+.owner-admin-field label{
+  display:block;
+  margin-bottom:6px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+.owner-special-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+
+.owner-special-actions button{
+  min-height:42px;
+  border-radius:10px;
+}
+
+.owner-member-list-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+
+.owner-member-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.owner-member-row{
+  width:100%;
+  display:grid;
+  grid-template-columns:minmax(220px,2fr) 110px 110px 120px;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+
+.owner-member-row:hover{
+  transform:translateY(-1px);
+}
+
+.owner-member-main{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+
+.owner-member-main strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.owner-member-main small{
+  margin-top:3px;
+  color:var(--muted);
+}
+
+#specialMessage{
+  margin:10px 0;
+  min-height:20px;
+}
+
+@media(max-width:720px){
+  .owner-member-row{
+    grid-template-columns:1fr;
+  }
+
+  .owner-special-actions{
+    grid-template-columns:1fr;
+  }
+
+  .owner-user-info{
+    flex-direction:column;
+    gap:4px;
+  }
+}
