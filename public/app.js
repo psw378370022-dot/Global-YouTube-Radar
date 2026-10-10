@@ -1147,13 +1147,194 @@ $('#specialModal').addEventListener('click', event => {
     $('#specialModal').classList.add('hidden');
   }
 });
-async function updateSpecialAccess(enabled) {
+function showOwnerUser(user) {
+  if (!user) return;
+
+  $('#ownerUserEmail').textContent =
+    user.email || '-';
+
+  $('#ownerPlanSelect').value =
+    user.plan || 'FREE';
+
+  $('#ownerSubscriptionSelect').value =
+    user.subscription_status || 'inactive';
+
+  $('#ownerUserPanel').classList.remove('hidden');
+}
+
+
+async function lookupOwnerUser() {
   const email =
     $('#specialEmail').value
       .trim()
       .toLowerCase();
 
   const message = $('#specialMessage');
+
+  if (!email || !email.includes('@')) {
+    message.textContent =
+      '회원 이메일을 입력해주세요.';
+    return;
+  }
+
+  try {
+    const data = await api(
+      '/api/admin/user?email=' +
+      encodeURIComponent(email)
+    );
+
+    showOwnerUser(data.user);
+
+    message.textContent =
+      '✅ 회원 정보를 불러왔습니다.';
+
+  } catch (error) {
+    $('#ownerUserPanel').classList.add('hidden');
+    message.textContent = error.message;
+  }
+}
+
+
+async function loadOwnerUsers() {
+  const list = $('#ownerMemberList');
+
+  list.textContent =
+    '회원 목록을 불러오는 중...';
+
+  try {
+    const data =
+      await api('/api/admin/users');
+
+    const users =
+      Array.isArray(data.users)
+        ? data.users
+        : [];
+
+    if (!users.length) {
+      list.innerHTML =
+        '<div class="empty">회원이 없습니다.</div>';
+      return;
+    }
+
+    list.innerHTML = users.map(user => {
+      const email =
+        escapeHtml(user.email || '');
+
+      const nickname =
+        escapeHtml(user.nickname || '-');
+
+      const plan =
+        escapeHtml(user.plan || 'FREE');
+
+      const subscription =
+        escapeHtml(
+          user.subscription_status || 'inactive'
+        );
+
+      const special =
+        user.special_access
+          ? 'ON'
+          : 'OFF';
+
+      const encodedEmail =
+        encodeURIComponent(user.email || '');
+
+      return `
+        <button
+          type="button"
+          class="owner-member-row"
+          data-owner-email="${encodedEmail}"
+        >
+          <span class="owner-member-main">
+            <strong>${email}</strong>
+            <small>${nickname}</small>
+          </span>
+
+          <span>${plan}</span>
+          <span>${subscription}</span>
+          <span>SPECIAL ${special}</span>
+        </button>
+      `;
+    }).join('');
+
+    list
+      .querySelectorAll('[data-owner-email]')
+      .forEach(button => {
+        button.addEventListener('click', () => {
+          const email =
+            decodeURIComponent(
+              button.dataset.ownerEmail || ''
+            );
+
+          $('#specialEmail').value = email;
+          lookupOwnerUser();
+        });
+      });
+
+  } catch (error) {
+    list.textContent = error.message;
+  }
+}
+
+
+async function saveOwnerUser() {
+  const email =
+    $('#specialEmail').value
+      .trim()
+      .toLowerCase();
+
+  const plan =
+    $('#ownerPlanSelect').value;
+
+  const subscriptionStatus =
+    $('#ownerSubscriptionSelect').value;
+
+  const message = $('#specialMessage');
+
+  if (!email || !email.includes('@')) {
+    message.textContent =
+      '회원 이메일을 입력해주세요.';
+    return;
+  }
+
+  try {
+    const data = await api(
+      '/api/admin/user-access',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          plan,
+          subscription_status:
+            subscriptionStatus
+        })
+      }
+    );
+
+    showOwnerUser(data.user);
+
+    message.textContent =
+      '✅ 요금제와 구독 상태를 저장했습니다.';
+
+    await loadOwnerUsers();
+
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
+
+async function updateSpecialAccess(enabled) {
+  const email =
+    $('#specialEmail').value
+      .trim()
+      .toLowerCase();
+
+  const message =
+    $('#specialMessage');
 
   if (!email || !email.includes('@')) {
     message.textContent =
@@ -1176,25 +1357,49 @@ async function updateSpecialAccess(enabled) {
       }
     );
 
+    showOwnerUser(data.user);
+
     message.textContent =
       data.user?.special_access
         ? '✅ SPECIAL 권한을 켰습니다.'
         : '✅ SPECIAL 권한을 해제했습니다.';
 
+    await loadOwnerUsers();
+
   } catch (error) {
-    message.textContent =
-      error.message;
+    message.textContent = error.message;
   }
 }
 
-$('#specialEnable').addEventListener(
+
+$('#ownerLookupUser')?.addEventListener(
+  'click',
+  lookupOwnerUser
+);
+
+$('#ownerSaveUser')?.addEventListener(
+  'click',
+  saveOwnerUser
+);
+
+$('#ownerReloadUsers')?.addEventListener(
+  'click',
+  loadOwnerUsers
+);
+
+$('#specialEnable')?.addEventListener(
   'click',
   () => updateSpecialAccess(true)
 );
 
-$('#specialDisable').addEventListener(
+$('#specialDisable')?.addEventListener(
   'click',
   () => updateSpecialAccess(false)
+);
+
+$('#specialAdminBtn')?.addEventListener(
+  'click',
+  loadOwnerUsers
 );
 $('#closeModal').addEventListener(
   'click',
