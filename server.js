@@ -1712,11 +1712,19 @@ if (category !== 'all') {
       sortMap[sort] ||
       sortMap.d24_subscribers;
 
-    rows.sort(
-      (a, b) =>
-        sortFunction(b) -
-        sortFunction(a)
-    );
+    if (metric === 'latest') {
+  rows.sort(
+    (a, b) =>
+      new Date(b.publishedAt || 0).getTime() -
+      new Date(a.publishedAt || 0).getTime()
+  );
+} else {
+  rows.sort(
+    (a, b) =>
+      Number(b[metric] || 0) -
+      Number(a[metric] || 0)
+  );
+}
 
     res.json({
       limit,
@@ -2014,15 +2022,32 @@ app.get('/api/rankings', async (req, res) => {
   String(req.query.region || 'ALL');
 
 const requestedMetric =
-  ['d10', 'd1', 'd6', 'd24', 'd7', 'velocity']
+  ['d10', 'd1', 'd6', 'd24', 'd7', 'velocity', 'latest']
     .includes(req.query.metric)
     ? req.query.metric
     : 'd24';
-    
-  const metric =
-  canUsePeriod(access, requestedMetric)
-    ? requestedMetric
-    : 'd24';
+
+const chinaLatest =
+  requestedMetric === 'latest';
+
+if (
+  chinaLatest &&
+  (
+    !chinaOnly ||
+    access.plan !== 'OWNER'
+  )
+) {
+  return res.status(403).json({
+    error: '중국 최신 콘텐츠는 OWNER 전용 기능입니다.'
+  });
+}
+
+const metric =
+  chinaLatest
+    ? 'latest'
+    : canUsePeriod(access, requestedMetric)
+      ? requestedMetric
+      : 'd24';
     
 const limit = Math.min(
   Math.max(
