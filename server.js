@@ -1615,14 +1615,28 @@ app.get('/api/channel-rankings', async (req, res) => {
   try {
     const user = await getUser(req);
     const access = getPlanAccess(user);
+    const channelPeriods =
+  ['d10', 'd1', 'd6', 'd24', 'd7']
+    .filter(period =>
+      access.allowedMetrics.includes(period)
+    );
 
     const limit = Math.min(
       Math.max(Number(req.query.limit) || 100, 1),
       Math.min(access.maxLimit, 500)
     );
 
-    const sort =
-      String(req.query.sort || 'd24_subscribers');
+    const requestedSort =
+  String(req.query.sort || 'd24_subscribers');
+
+const sortPeriodMatch =
+  requestedSort.match(/^(d10|d1|d6|d24|d7)_/);
+
+const sort =
+  sortPeriodMatch &&
+  !channelPeriods.includes(sortPeriodMatch[1])
+    ? 'd24_subscribers'
+    : requestedSort;
 
     const now = Date.now();
 
@@ -1648,7 +1662,7 @@ app.get('/api/channel-rankings', async (req, res) => {
       return res.json({
         limit,
         sort,
-        periods: ['d10', 'd1', 'd6', 'd24', 'd7'],
+        periods: channelPeriods,
         items: []
       });
     }
@@ -1918,21 +1932,32 @@ if (category !== 'all') {
       sortMap.d24_subscribers;
 
    
+    const responseItems =
+  rows.slice(0, limit).map(row => {
+    const item = { ...row };
 
-    res.json({
-      limit,
-      sort,
+    for (const period of [
+      'd10',
+      'd1',
+      'd6',
+      'd24',
+      'd7'
+    ]) {
+      if (!channelPeriods.includes(period)) {
+        delete item[period];
+      }
+    }
 
-      periods: [
-        'd10',
-        'd1',
-        'd6',
-        'd24',
-        'd7'
-      ],
+    return item;
+  });
 
-      items: rows.slice(0, limit)
-    });
+res.json({
+  limit,
+  sort,
+  periods: channelPeriods,
+  items: responseItems
+});
+
 
   } catch (error) {
     console.error(
@@ -2507,7 +2532,24 @@ if (chinaOnly) {
   );
 }
 const responseRows =
-  rows.slice(0, limit);
+  rows.slice(0, limit).map(row => {
+    const item = { ...row };
+
+    for (const period of [
+      'd10',
+      'd1',
+      'd6',
+      'd24',
+      'd7',
+      'velocity'
+    ]) {
+      if (!access.allowedMetrics.includes(period)) {
+        delete item[period];
+      }
+    }
+
+    return item;
+  });
 
 setRankingCache(
   cacheKey,
