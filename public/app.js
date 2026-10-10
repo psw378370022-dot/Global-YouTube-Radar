@@ -490,6 +490,12 @@ const data = await api(
   }
 }
 function render(rows) {
+  const displayAccess = getClientPlanAccess();
+
+const canShowPeriod = period =>
+  displayAccess.allowedMetrics.includes(period);
+
+  
   const query =
     $('#search').value
       .trim()
@@ -620,39 +626,44 @@ function render(rows) {
 
   · ${x.isShort ? 'Shorts 추정' : 'Video'}
 </div>
-          </div>
+          
+            ${canShowPeriod('d10') ? `
+  <div class="num">
+    <span class="muted">10분</span>
+    <strong>+${fmt(x.d10)}</strong>
+  </div>
+` : ''}
 
-          <div class="num">
-            <span class="muted">현재 조회수</span>
-            <strong>${fmt(x.views)}</strong>
-          </div>
+${canShowPeriod('d1') ? `
+  <div class="num">
+    <span class="muted">1시간</span>
+    <strong class="hot">
+      +${fmt(x.d1)}
+    </strong>
+  </div>
+` : ''}
 
-          <div class="num">
-            <span class="muted">10분</span>
-            <strong>+${fmt(x.d10)}</strong>
-          </div>
+${canShowPeriod('d6') ? `
+  <div class="num">
+    <span class="muted">6시간</span>
+    <strong>+${fmt(x.d6)}</strong>
+  </div>
+` : ''}
 
-          <div class="num">
-            <span class="muted">1시간</span>
-            <strong class="hot">
-              +${fmt(x.d1)}
-            </strong>
-          </div>
+${canShowPeriod('d24') ? `
+  <div class="num">
+    <span class="muted">24시간</span>
+    <strong>+${fmt(x.d24)}</strong>
+  </div>
+` : ''}
 
-          <div class="num">
-            <span class="muted">6시간</span>
-            <strong>+${fmt(x.d6)}</strong>
-          </div>
-    
-        <div class="num">
-  <span class="muted">24시간</span>
-  <strong>+${fmt(x.d24)}</strong>
-</div>
+${canShowPeriod('d7') ? `
+  <div class="num">
+    <span class="muted">7일</span>
+    <strong>+${fmt(x.d7)}</strong>
+  </div>
+` : ''}
 
-<div class="num">
-  <span class="muted">7일</span>
-  <strong>+${fmt(x.d7)}</strong>
-</div>
         </article>
       `;
     })
@@ -660,6 +671,11 @@ function render(rows) {
 }
 
   function renderChannels(rows, period = 'd24') {
+    const displayAccess = getClientPlanAccess();
+
+const canShowChannelPeriod = period =>
+  displayAccess.allowedMetrics.includes(period);
+    
   const query = $('#search').value
     .trim()
     .toLowerCase();
@@ -770,25 +786,36 @@ function render(rows) {
               ${subscribers.toLocaleString()}
             </div>
 
-            <div class="channel-growth">
-              ${gainText(x, 'd10')}
-            </div>
+          
+              ${canShowChannelPeriod('d10') ? `
+  <div class="channel-growth">
+    ${gainText(x, 'd10')}
+  </div>
+` : ''}
 
-            <div class="channel-growth">
-              ${gainText(x, 'd1')}
-            </div>
+${canShowChannelPeriod('d1') ? `
+  <div class="channel-growth">
+    ${gainText(x, 'd1')}
+  </div>
+` : ''}
 
-            <div class="channel-growth">
-              ${gainText(x, 'd6')}
-            </div>
+${canShowChannelPeriod('d6') ? `
+  <div class="channel-growth">
+    ${gainText(x, 'd6')}
+  </div>
+` : ''}
 
-            <div class="channel-growth">
-              ${gainText(x, 'd24')}
-            </div>
+${canShowChannelPeriod('d24') ? `
+  <div class="channel-growth">
+    ${gainText(x, 'd24')}
+  </div>
+` : ''}
 
-            <div class="channel-growth">
-              ${gainText(x, 'd7')}
-            </div>
+${canShowChannelPeriod('d7') ? `
+  <div class="channel-growth">
+    ${gainText(x, 'd7')}
+  </div>
+` : ''}
 
             <div class="channel-number">
               ${totalViews.toLocaleString()}
