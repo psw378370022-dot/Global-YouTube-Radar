@@ -2029,6 +2029,9 @@ app.get('/api/channel-search', async (req, res) => {
 
 app.get('/api/channel-analysis/:channelId', async (req, res) => {
   try {
+    const user = await getUser(req);
+    const access = getPlanAccess(user);
+    
     const channelId =
       String(req.params.channelId || '').trim();
 
@@ -2130,6 +2133,21 @@ app.get('/api/channel-analysis/:channelId', async (req, res) => {
         ? (growth.d7.viewGain / 7) * 30
         : growth.d24.viewGain * 30;
 
+    const responseGrowth = {
+  ...growth
+};
+
+for (const period of [
+  'd10',
+  'd1',
+  'd6',
+  'd24',
+  'd7'
+]) {
+  if (!access.allowedMetrics.includes(period)) {
+    delete responseGrowth[period];
+  }
+}
     res.json({
       channelId: row.channel_id,
       title: row.title,
@@ -2143,7 +2161,7 @@ app.get('/api/channel-analysis/:channelId', async (req, res) => {
       lastSeen:
         Number(row.last_seen || 0),
 
-      growth,
+      growth: responseGrowth,
 
       estimatedMonthlyViews:
         Math.round(monthlyViews),
