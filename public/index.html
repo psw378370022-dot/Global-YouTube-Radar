@@ -336,35 +336,113 @@
     </div>
   </div>
 <!-- OWNER 전용 SPECIAL 회원 관리 -->
+<!-- OWNER 전용 회원 관리 -->
 <div id="specialModal" class="modal hidden">
-  <div class="modal-card">
+  <div class="modal-card owner-admin-card">
     <button id="closeSpecialModal" class="modal-close">×</button>
 
-    <h2>🔐 SPECIAL 회원 관리</h2>
+    <h2>🔐 OWNER 회원 관리</h2>
 
     <p class="modal-desc">
-      인터넷방송 전용 권한을 회원에게 부여하거나 해제합니다.
+      회원 요금제, 구독 상태, SPECIAL 권한을 관리합니다.
     </p>
 
-    <input
-      id="specialEmail"
-      class="auth-field"
-      type="email"
-      placeholder="회원 이메일"
-      autocomplete="off"
-    >
+    <div class="owner-admin-section">
+      <h3>회원 조회</h3>
 
-    <div id="specialMessage"></div>
+      <input
+        id="specialEmail"
+        class="auth-field"
+        type="email"
+        placeholder="회원 이메일"
+        autocomplete="off"
+      >
 
-    <button id="specialEnable" class="auth-submit" type="button">
-      SPECIAL 권한 켜기
-    </button>
+      <button
+        id="ownerLookupUser"
+        class="auth-submit"
+        type="button"
+      >
+        회원 조회
+      </button>
 
-    <button id="specialDisable" type="button">
-      SPECIAL 권한 해제
-    </button>
+      <div id="specialMessage"></div>
+    </div>
+
+    <div id="ownerUserPanel" class="owner-user-panel hidden">
+
+      <div class="owner-user-info">
+        <span>회원</span>
+        <strong id="ownerUserEmail">-</strong>
+      </div>
+
+      <div class="owner-admin-field">
+        <label for="ownerPlanSelect">요금제</label>
+
+        <select id="ownerPlanSelect" class="auth-field">
+          <option value="FREE">FREE</option>
+          <option value="PRO">PRO</option>
+          <option value="PRO_PLUS">PRO+</option>
+          <option value="BUSINESS">BUSINESS</option>
+        </select>
+      </div>
+
+      <div class="owner-admin-field">
+        <label for="ownerSubscriptionSelect">구독 상태</label>
+
+        <select id="ownerSubscriptionSelect" class="auth-field">
+          <option value="active">active</option>
+          <option value="inactive">inactive</option>
+        </select>
+      </div>
+
+      <button
+        id="ownerSaveUser"
+        class="auth-submit"
+        type="button"
+      >
+        요금제 · 구독 상태 저장
+      </button>
+
+      <div class="owner-special-actions">
+        <button
+          id="specialEnable"
+          class="auth-submit"
+          type="button"
+        >
+          SPECIAL 권한 켜기
+        </button>
+
+        <button
+          id="specialDisable"
+          type="button"
+        >
+          SPECIAL 권한 해제
+        </button>
+      </div>
+
+    </div>
+
+    <div class="owner-member-list-section">
+      <div class="owner-member-list-header">
+        <h3>회원 목록</h3>
+
+        <button
+          id="ownerReloadUsers"
+          type="button"
+        >
+          새로고침
+        </button>
+      </div>
+
+      <div id="ownerMemberList" class="owner-member-list">
+        회원 목록을 불러오면 여기에 표시됩니다.
+      </div>
+    </div>
+
   </div>
 </div>
+  
   <footer>
     <strong>Global YouTube Radar</strong>
     <span>
