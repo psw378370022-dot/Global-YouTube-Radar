@@ -128,15 +128,23 @@ if (metricSelect) {
       .toUpperCase() === 'OWNER';
 
   const canUseMetric = value => {
-    if (value === 'latest') {
-      return (
-        isOwner &&
-        rankingMode === 'china'
-      );
-    }
+  if (value === 'latest') {
+    return (
+      isOwner &&
+      rankingMode === 'china'
+    );
+  }
 
-    return access.allowedMetrics.includes(value);
-  };
+  if (value === 'upload_latest') {
+    return (
+      isOwner &&
+      rankingMode !== 'china' &&
+      rankingMode !== 'channel'
+    );
+  }
+
+  return access.allowedMetrics.includes(value);
+};
 
   [...metricSelect.options].forEach(option => {
     const allowed =
