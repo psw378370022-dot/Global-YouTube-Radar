@@ -1224,3 +1224,10 @@ footer small{
     gap:4px;
   }
 }
+
+.published-time{
+  margin-top:4px;
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+}
