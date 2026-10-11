@@ -13,6 +13,7 @@ const els = ['region', 'type', 'category', 'metric', 'limit'];
 
 let currentUser = null;
 let rankingMode = 'video';
+let latestOrder = 'desc';
 let authMode = 'login';
 let loadTimer = null;
 
@@ -154,12 +155,33 @@ if (metricSelect) {
     option.disabled = !allowed;
   });
 
+  if (metricSelect) {
+  ...
+
   if (!canUseMetric(metricSelect.value)) {
     metricSelect.value = 'd24';
   }
+
+  const latestOrderBtn = $('#latestOrderBtn');
+
+  if (latestOrderBtn) {
+    const isLatestMode =
+      metricSelect.value === 'latest' ||
+      metricSelect.value === 'upload_latest';
+
+    latestOrderBtn.classList.toggle(
+      'hidden',
+      !(isOwner && isLatestMode)
+    );
+
+    latestOrderBtn.textContent =
+      latestOrder === 'desc'
+        ? '🕒 최신순 ↓'
+        : '🕒 오래된순 ↑';
+  }
 }
 
-  const limitSelect = $('#limit');
+const limitSelect = $('#limit');
 
   if (limitSelect) {
     [...limitSelect.options].forEach(option => {
@@ -405,6 +427,20 @@ if (rankingMode === 'china') {
     $('#chinaSearch')?.value.trim() || ''
   );
 }
+
+const selectedMetric =
+  $('#metric')?.value || 'd24';
+
+if (
+  selectedMetric === 'latest' ||
+  selectedMetric === 'upload_latest'
+) {
+  qs.set(
+    'latestOrder',
+    latestOrder
+  );
+}
+
     const statusPromise = statusCache
   ? Promise.resolve(statusCache)
   : api('/api/status').then(data => {
@@ -497,12 +533,56 @@ const data = await api(
     `;
   }
 }
+  
+function formatPublishedAgo(value) {
+  const ts = new Date(value).getTime();
+
+  if (!Number.isFinite(ts)) {
+    return '시간 정보 없음';
+  }
+
+  const diff =
+    Math.max(0, Date.now() - ts);
+
+  const minutes =
+    Math.floor(diff / 60000);
+
+  if (minutes < 1) return '방금 전';
+  if (minutes < 60) return `${minutes}분 전`;
+
+  const hours =
+    Math.floor(minutes / 60);
+
+  if (hours < 24) return `${hours}시간 전`;
+
+  const days =
+    Math.floor(hours / 24);
+
+  if (days < 30) return `${days}일 전`;
+
+  const months =
+    Math.floor(days / 30);
+
+  if (months < 12) return `${months}개월 전`;
+
+  const years =
+    Math.floor(days / 365);
+
+  return `${years}년 전`;
+}  
 function render(rows) {
   const displayAccess = getClientPlanAccess();
 
 const canShowPeriod = period =>
   displayAccess.allowedMetrics.includes(period);
-
+  
+const showPublishedTime =
+  String(currentUser?.plan || '')
+    .toUpperCase() === 'OWNER' &&
+  (
+    $('#metric')?.value === 'latest' ||
+    $('#metric')?.value === 'upload_latest'
+  );
   
   const query =
     $('#search').value
@@ -634,6 +714,12 @@ const canShowPeriod = period =>
 
   · ${x.isShort ? 'Shorts 추정' : 'Video'}
 </div>
+
+${showPublishedTime ? `
+  <div class="published-time">
+    🕒 업로드 ${formatPublishedAgo(x.publishedAt)}
+  </div>
+` : ''}
 
 </div>
 
@@ -1133,6 +1219,18 @@ els.forEach(id => {
   }
 });
 
+  $('#latestOrderBtn')?.addEventListener(
+  'click',
+  () => {
+    latestOrder =
+      latestOrder === 'desc'
+        ? 'asc'
+        : 'desc';
+
+    load();
+  }
+);
+  
 $('#search').addEventListener(
   'input',
   scheduleLoad
