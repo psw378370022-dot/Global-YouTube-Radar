@@ -2263,23 +2263,26 @@ const requestedMetric =
     ? req.query.metric
     : 'd24';
 
-const chinaLatest =
+const isLatest =
   requestedMetric === 'latest';
 
 if (
-  chinaLatest &&
-  (
-    !chinaOnly ||
-    access.plan !== 'OWNER'
-  )
+  isLatest &&
+  access.plan !== 'OWNER'
 ) {
   return res.status(403).json({
-    error: '중국 최신 콘텐츠는 OWNER 전용 기능입니다.'
+    error: '업로드 최신 탐색은 OWNER 전용 기능입니다.'
   });
 }
 
+const latestOrder =
+  String(req.query.latestOrder || 'desc')
+    .toLowerCase() === 'asc'
+    ? 'asc'
+    : 'desc';
+
 const metric =
-  chinaLatest
+  isLatest
     ? 'latest'
     : canUsePeriod(access, requestedMetric)
       ? requestedMetric
@@ -2537,10 +2540,17 @@ if (chinaOnly) {
   }
 }
     if (metric === 'latest') {
+  const direction =
+    latestOrder === 'asc'
+      ? 1
+      : -1;
+
   rows.sort(
     (a, b) =>
-      new Date(b.publishedAt || 0).getTime() -
-      new Date(a.publishedAt || 0).getTime()
+      direction * (
+        new Date(a.publishedAt || 0).getTime() -
+        new Date(b.publishedAt || 0).getTime()
+      )
   );
 } else {
   rows.sort(
@@ -2549,6 +2559,7 @@ if (chinaOnly) {
       Number(a[metric] || 0)
   );
 }
+
 const responseRows =
   rows.slice(0, limit).map(row => {
     const item = { ...row };
@@ -2566,9 +2577,13 @@ const responseRows =
       }
     }
 
+    if (access.plan !== 'OWNER') {
+      delete item.publishedAt;
+    }
+
     return item;
   });
-
+    
 setRankingCache(
   cacheKey,
   responseRows
