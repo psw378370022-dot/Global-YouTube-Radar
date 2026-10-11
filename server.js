@@ -2258,17 +2258,46 @@ app.get('/api/rankings', async (req, res) => {
   String(req.query.region || 'ALL');
 
 const requestedMetric =
-  ['d10', 'd1', 'd6', 'd24', 'd7', 'velocity', 'latest']
+  [
+    'd10',
+    'd1',
+    'd6',
+    'd24',
+    'd7',
+    'velocity',
+    'latest',
+    'upload_latest'
+  ]
     .includes(req.query.metric)
     ? req.query.metric
     : 'd24';
 
-const isLatest =
+const isChinaLatest =
   requestedMetric === 'latest';
 
+const isUploadLatest =
+  requestedMetric === 'upload_latest';
+
+// 중국 최신 = OWNER + 중국 분석에서만
 if (
-  isLatest &&
-  access.plan !== 'OWNER'
+  isChinaLatest &&
+  (
+    !chinaOnly ||
+    access.plan !== 'OWNER'
+  )
+) {
+  return res.status(403).json({
+    error: '중국 최신 콘텐츠는 OWNER 전용 기능입니다.'
+  });
+}
+
+// 업로드 최신 = OWNER + 전세계/카테고리에서만
+if (
+  isUploadLatest &&
+  (
+    chinaOnly ||
+    access.plan !== 'OWNER'
+  )
 ) {
   return res.status(403).json({
     error: '업로드 최신 탐색은 OWNER 전용 기능입니다.'
@@ -2282,11 +2311,13 @@ const latestOrder =
     : 'desc';
 
 const metric =
-  isLatest
+  isChinaLatest
     ? 'latest'
-    : canUsePeriod(access, requestedMetric)
-      ? requestedMetric
-      : 'd24';
+    : isUploadLatest
+      ? 'upload_latest'
+      : canUsePeriod(access, requestedMetric)
+        ? requestedMetric
+        : 'd24';
     
 const limit = Math.min(
   Math.max(
@@ -2539,7 +2570,10 @@ if (chinaOnly) {
     );
   }
 }
-    if (metric === 'latest') {
+    if (
+  metric === 'latest' ||
+  metric === 'upload_latest'
+) {
   const direction =
     latestOrder === 'asc'
       ? 1
