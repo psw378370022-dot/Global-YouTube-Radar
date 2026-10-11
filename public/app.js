@@ -894,56 +894,56 @@ ${canShowChannelPeriod('d7') ? `
   </span>
 </div>
 
-            <div class="channel-number">
-              ${subscribers.toLocaleString()}
-            </div>
+<div class="channel-number" data-label="총 구독자">
+  ${subscribers.toLocaleString()}
+</div>
 
           
-              ${canShowChannelPeriod('d10') ? `
-  <div class="channel-growth">
+             ${canShowChannelPeriod('d10') ? `
+  <div class="channel-growth" data-label="10분 ↑">
     ${gainText(x, 'd10')}
   </div>
 ` : ''}
 
 ${canShowChannelPeriod('d1') ? `
-  <div class="channel-growth">
+  <div class="channel-growth" data-label="1시간 ↑">
     ${gainText(x, 'd1')}
   </div>
 ` : ''}
 
 ${canShowChannelPeriod('d6') ? `
-  <div class="channel-growth">
+  <div class="channel-growth" data-label="6시간 ↑">
     ${gainText(x, 'd6')}
   </div>
 ` : ''}
 
 ${canShowChannelPeriod('d24') ? `
-  <div class="channel-growth">
+  <div class="channel-growth" data-label="24시간 ↑">
     ${gainText(x, 'd24')}
   </div>
 ` : ''}
 
 ${canShowChannelPeriod('d7') ? `
-  <div class="channel-growth">
+  <div class="channel-growth" data-label="7일 ↑">
     ${gainText(x, 'd7')}
   </div>
 ` : ''}
 
-            <div class="channel-number">
-              ${totalViews.toLocaleString()}
-            </div>
+            <div class="channel-number" data-label="총 조회수">
+  ${totalViews.toLocaleString()}
+</div>
 
-            <div class="channel-number">
-              ${videoCount.toLocaleString()}
-            </div>
+            <div class="channel-number" data-label="영상 수">
+  ${videoCount.toLocaleString()}
+</div>
 
-            <div class="channel-revenue">
-              $${revenueMin.toLocaleString()}
-              ~
-              $${revenueMax.toLocaleString()}
-            </div>
+            <div class="channel-revenue" data-label="추정 월수익">
+  $${revenueMin.toLocaleString()}
+  ~
+  $${revenueMax.toLocaleString()}
+</div>
 
-            <div>
+            <div data-label="분석">
               <button
                 type="button"
                 class="channel-analysis-btn"
