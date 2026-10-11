@@ -1231,3 +1231,91 @@ footer small{
   color:var(--muted);
   line-height:1.4;
 }
+
+@media (max-width: 720px) {
+  .channel-ranking-table {
+    overflow: visible;
+  }
+
+  .channel-ranking-header {
+    display: none;
+  }
+
+  .channel-ranking-row:not(.channel-ranking-header) {
+    min-width: 0;
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 0 12px;
+
+    margin-bottom: 14px;
+    padding: 14px;
+
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #0b1019;
+  }
+
+  .channel-ranking-row:not(.channel-ranking-header) > div {
+    padding: 9px 0;
+  }
+
+  .channel-ranking-row .channel-rank {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  .channel-ranking-row .channel-name-cell {
+    grid-column: 2;
+    grid-row: 1;
+
+    min-width: 0;
+    padding-top: 5px;
+    padding-bottom: 14px;
+  }
+
+  .channel-ranking-row:not(.channel-ranking-header) > [data-label] {
+    grid-column: 2;
+
+    display: grid;
+    grid-template-columns: 105px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+
+    border-top: 1px solid var(--line);
+  }
+
+  .channel-ranking-row:not(.channel-ranking-header) > [data-label]::before {
+    content: attr(data-label);
+
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .channel-ranking-row .channel-number,
+  .channel-ranking-row .channel-growth,
+  .channel-ranking-row .channel-revenue {
+    text-align: right;
+  }
+
+  .channel-ranking-row [data-label="분석"] {
+    display: block;
+  }
+
+  .channel-ranking-row [data-label="분석"]::before {
+    display: none;
+  }
+
+  .channel-ranking-row .channel-analysis-btn {
+    width: 100%;
+    min-height: 42px;
+  }
+}
