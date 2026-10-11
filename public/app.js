@@ -123,65 +123,63 @@ function applyPlanControls() {
 
   const metricSelect = $('#metric');
 
-if (metricSelect) {
-  const isOwner =
-    String(currentUser?.plan || '')
-      .toUpperCase() === 'OWNER';
-
-  const canUseMetric = value => {
-  if (value === 'latest') {
-    return (
-      isOwner &&
-      rankingMode === 'china'
-    );
-  }
-
-  if (value === 'upload_latest') {
-    return (
-      isOwner &&
-      rankingMode !== 'china' &&
-      rankingMode !== 'channel'
-    );
-  }
-
-  return access.allowedMetrics.includes(value);
-};
-
-  [...metricSelect.options].forEach(option => {
-    const allowed =
-      canUseMetric(option.value);
-
-    option.hidden = !allowed;
-    option.disabled = !allowed;
-  });
-
   if (metricSelect) {
-  ...
+    const isOwner =
+      String(currentUser?.plan || '')
+        .toUpperCase() === 'OWNER';
 
-  if (!canUseMetric(metricSelect.value)) {
-    metricSelect.value = 'd24';
+    const canUseMetric = value => {
+      if (value === 'latest') {
+        return (
+          isOwner &&
+          rankingMode === 'china'
+        );
+      }
+
+      if (value === 'upload_latest') {
+        return (
+          isOwner &&
+          rankingMode !== 'china' &&
+          rankingMode !== 'channel'
+        );
+      }
+
+      return access.allowedMetrics.includes(value);
+    };
+
+    [...metricSelect.options].forEach(option => {
+      const allowed =
+        canUseMetric(option.value);
+
+      option.hidden = !allowed;
+      option.disabled = !allowed;
+    });
+
+    if (!canUseMetric(metricSelect.value)) {
+      metricSelect.value = 'd24';
+    }
+
+    const latestOrderBtn =
+      $('#latestOrderBtn');
+
+    if (latestOrderBtn) {
+      const isLatestMode =
+        metricSelect.value === 'latest' ||
+        metricSelect.value === 'upload_latest';
+
+      latestOrderBtn.classList.toggle(
+        'hidden',
+        !(isOwner && isLatestMode)
+      );
+
+      latestOrderBtn.textContent =
+        latestOrder === 'desc'
+          ? '🕒 최신순 ↓'
+          : '🕒 오래된순 ↑';
+    }
   }
 
-  const latestOrderBtn = $('#latestOrderBtn');
-
-  if (latestOrderBtn) {
-    const isLatestMode =
-      metricSelect.value === 'latest' ||
-      metricSelect.value === 'upload_latest';
-
-    latestOrderBtn.classList.toggle(
-      'hidden',
-      !(isOwner && isLatestMode)
-    );
-
-    latestOrderBtn.textContent =
-      latestOrder === 'desc'
-        ? '🕒 최신순 ↓'
-        : '🕒 오래된순 ↑';
-  }
-}
-
-const limitSelect = $('#limit');
+  const limitSelect = $('#limit');
 
   if (limitSelect) {
     [...limitSelect.options].forEach(option => {
