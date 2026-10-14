@@ -1296,7 +1296,12 @@ $('#signupBtn').addEventListener(
   'click',
   () => openAuth('register')
 );
-
+$('#pricingBtn')?.addEventListener(
+  'click',
+  () => {
+    window.location.href = '/pricing.html';
+  }
+);
 $('#logoutBtn').addEventListener(
   'click',
   logout
