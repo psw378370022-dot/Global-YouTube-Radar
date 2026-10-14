@@ -390,9 +390,14 @@ let statusCache = null;
 async function load() {
   applyPlanControls();
   const status = $('#status');
-
+  let wakeTimer = null;
   try {
     if (rankingMode === 'channel') return loadChannels();
+
+    wakeTimer = setTimeout(() => {
+  status.textContent =
+    '⏳ 서버를 준비 중입니다. 잠시만 기다려주세요...';
+}, 2500);
     
     const qs = new URLSearchParams(
   Object.fromEntries(
@@ -450,7 +455,8 @@ const [st, rows] = await Promise.all([
   statusPromise,
   api('/api/rankings?' + qs.toString())
 ]);
-
+clearTimeout(wakeTimer);
+wakeTimer = null;
     $('#trackedCount').textContent =
       Number(st.tracked || 0).toLocaleString();
 
@@ -464,6 +470,8 @@ const [st, rows] = await Promise.all([
 
     render(rows);
   } catch (error) {
+    clearTimeout(wakeTimer);
+wakeTimer = null;
     status.textContent =
       '데이터를 불러오지 못했습니다: ' +
       error.message;
@@ -477,7 +485,7 @@ const [st, rows] = await Promise.all([
 }
 async function loadChannels() {
   const status = $('#status');
-
+  let wakeTimer = null;
   try {
     const limit = $('#limit')?.value || '100';
     const metric = $('#metric').value || 'd24';
@@ -498,10 +506,16 @@ async function loadChannels() {
 
 const category =
   $('#category')?.value || 'all';
-
+wakeTimer = setTimeout(() => {
+  status.textContent =
+    '⏳ 서버를 준비 중입니다. 잠시만 기다려주세요...';
+}, 2500);
 const data = await api(
   `/api/channel-rankings?sort=${encodeURIComponent(sort)}&limit=${encodeURIComponent(limit)}&category=${encodeURIComponent(category)}`
 );
+
+clearTimeout(wakeTimer);
+wakeTimer = null;
 
     const periodLabels = {
       d10: '10분',
@@ -520,7 +534,11 @@ const data = await api(
     );
 
   } catch (error) {
-    status.textContent =
+  if (wakeTimer) {
+    clearTimeout(wakeTimer);
+  }
+
+  status.textContent =
       '채널 순위를 불러오지 못했습니다: ' +
       error.message;
 
