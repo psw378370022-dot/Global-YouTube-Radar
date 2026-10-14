@@ -1319,3 +1319,385 @@ footer small{
     min-height: 42px;
   }
 }
+
+/* =========================
+   PRICING PAGE
+========================= */
+
+.pricing-page{
+  min-height:100vh;
+  background:#070c16;
+}
+
+.pricing-topbar{
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+
+.pricing-back-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:42px;
+  padding:0 16px;
+
+  border:1px solid var(--line);
+  border-radius:10px;
+
+  color:var(--text);
+  text-decoration:none;
+  font-weight:700;
+
+  background:#101827;
+}
+
+.pricing-back-btn:hover{
+  transform:translateY(-1px);
+}
+
+
+.pricing-main{
+  width:min(1500px, calc(100% - 32px));
+  margin:0 auto;
+  padding:58px 0 70px;
+}
+
+
+.pricing-hero{
+  text-align:center;
+  margin-bottom:34px;
+}
+
+.pricing-hero .eyebrow{
+  display:inline-block;
+  margin-bottom:10px;
+
+  color:#ff5167;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+.pricing-hero h2{
+  margin:0;
+  font-size:36px;
+  line-height:1.2;
+}
+
+.pricing-hero p{
+  margin:12px auto 0;
+  max-width:650px;
+
+  color:var(--muted);
+  font-size:15px;
+  line-height:1.7;
+}
+
+
+/* 요금제 카드 */
+
+.pricing-grid{
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0,1fr));
+  gap:14px;
+  align-items:stretch;
+}
+
+.pricing-card{
+  position:relative;
+
+  display:flex;
+  flex-direction:column;
+
+  min-width:0;
+  min-height:520px;
+  padding:24px 20px 20px;
+
+  border:1px solid var(--line);
+  border-radius:18px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.025),
+      rgba(255,255,255,.005)
+    ),
+    #0d1422;
+}
+
+.pricing-card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(255,255,255,.22);
+}
+
+
+.pricing-plan-name{
+  font-size:24px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+
+.pricing-plan-desc{
+  min-height:48px;
+  margin:8px 0 18px;
+
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.55;
+}
+
+
+.pricing-price{
+  margin-bottom:22px;
+
+  font-size:24px;
+  font-weight:900;
+}
+
+.pricing-price small{
+  display:block;
+  margin-top:6px;
+
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+}
+
+
+.pricing-features{
+  flex:1;
+
+  margin:0 0 22px;
+  padding:0;
+
+  list-style:none;
+}
+
+.pricing-features li{
+  padding:8px 0;
+
+  border-bottom:1px solid rgba(255,255,255,.055);
+
+  font-size:13px;
+  line-height:1.45;
+}
+
+.pricing-features li:last-child{
+  border-bottom:0;
+}
+
+
+/* 버튼 */
+
+.pricing-action{
+  width:100%;
+  min-height:46px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  margin-top:auto;
+
+  border:0;
+  border-radius:11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff3158,
+      #ff6848
+    );
+
+  color:white;
+  text-decoration:none;
+  font-size:14px;
+  font-weight:900;
+}
+
+.pricing-action:disabled{
+  opacity:.72;
+  cursor:not-allowed;
+}
+
+.pricing-action-free{
+  background:#64748b;
+}
+
+.pricing-owner-btn{
+  color:#181100;
+  background:#f6c944;
+}
+
+
+/* PRO */
+
+.pricing-pro{
+  border-color:rgba(59,130,246,.65);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(37,99,235,.18),
+      rgba(13,20,34,.95)
+    );
+}
+
+.pricing-pro .pricing-plan-name{
+  color:#74b9ff;
+}
+
+
+/* PRO PLUS */
+
+.pricing-pro-plus{
+  border-color:rgba(168,85,247,.75);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(126,34,206,.22),
+      rgba(13,20,34,.95)
+    );
+}
+
+.pricing-pro-plus .pricing-plan-name{
+  color:#c084fc;
+}
+
+.pricing-recommend{
+  position:absolute;
+  top:14px;
+  right:14px;
+
+  padding:4px 9px;
+
+  border-radius:999px;
+
+  background:#9333ea;
+  color:white;
+
+  font-size:10px;
+  font-weight:900;
+}
+
+
+/* BUSINESS */
+
+.pricing-business{
+  border-color:rgba(16,185,129,.65);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5,150,105,.20),
+      rgba(13,20,34,.95)
+    );
+}
+
+.pricing-business .pricing-plan-name{
+  color:#4ade80;
+}
+
+
+/* OWNER */
+
+.pricing-owner{
+  border-color:rgba(234,179,8,.7);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(202,138,4,.20),
+      rgba(13,20,34,.95)
+    );
+}
+
+.pricing-owner .pricing-plan-name{
+  color:#facc15;
+}
+
+
+/* 하단 안내 */
+
+.pricing-note{
+  margin-top:28px;
+  padding:22px;
+
+  border:1px solid var(--line);
+  border-radius:16px;
+
+  background:#0d1422;
+}
+
+.pricing-note h3{
+  margin:0 0 10px;
+}
+
+.pricing-note p{
+  margin:6px 0;
+
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.7;
+}
+
+
+/* 태블릿 */
+
+@media(max-width:1200px){
+  .pricing-grid{
+    grid-template-columns:
+      repeat(3, minmax(0,1fr));
+  }
+}
+
+
+/* 모바일 */
+
+@media(max-width:720px){
+
+  .pricing-main{
+    width:min(100% - 28px, 620px);
+    padding:32px 0 50px;
+  }
+
+  .pricing-hero{
+    margin-bottom:24px;
+  }
+
+  .pricing-hero h2{
+    font-size:29px;
+  }
+
+  .pricing-hero p{
+    font-size:14px;
+  }
+
+  .pricing-grid{
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+
+  .pricing-card{
+    min-height:0;
+    padding:22px 18px;
+  }
+
+  .pricing-plan-desc{
+    min-height:0;
+  }
+
+  .pricing-plan-name{
+    font-size:25px;
+  }
+
+  .pricing-price{
+    font-size:23px;
+  }
+
+  .pricing-back-btn{
+    width:100%;
+  }
+}
