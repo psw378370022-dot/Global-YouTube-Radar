@@ -208,10 +208,22 @@ function updateAccount() {
  
   const specialAdminBtn = $('#specialAdminBtn');
   const chinaTab = $('#chinaTab');
-
+  const categoryTab = $('#categoryTab');
   if (currentUser) {
     const plan = currentUser.plan || 'FREE';
 
+const canUseCategory =
+  plan === 'OWNER' ||
+  (
+    ['PRO', 'PRO_PLUS', 'BUSINESS'].includes(plan) &&
+    currentUser.subscription_status === 'active'
+  );
+
+categoryTab.classList.toggle(
+  'hidden',
+  !canUseCategory
+);
+    
     planBadge.textContent = plan;
     planBadge.classList.toggle(
       'pro',
@@ -255,6 +267,7 @@ chinaTab.classList.toggle(
     
     specialAdminBtn.classList.add('hidden');
     chinaTab.classList.add('hidden');
+    categoryTab.classList.add('hidden');
   }
 applyPlanControls();
 }
