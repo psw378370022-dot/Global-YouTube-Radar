@@ -121,6 +121,40 @@ function getClientPlanAccess() {
 function applyPlanControls() {
   const access = getClientPlanAccess();
 
+  const categorySelect = $('#category');
+
+if (categorySelect) {
+  const rawPlan =
+    String(currentUser?.plan || 'FREE')
+      .trim()
+      .toUpperCase();
+
+  const subscriptionStatus =
+    String(currentUser?.subscription_status || '')
+      .trim()
+      .toLowerCase();
+
+  const canUseCategory =
+    rawPlan === 'OWNER' ||
+    (
+      ['PRO', 'PRO_PLUS', 'BUSINESS'].includes(rawPlan) &&
+      subscriptionStatus === 'active'
+    );
+
+  const showCategory =
+    canUseCategory &&
+    rankingMode === 'video';
+
+  categorySelect.classList.toggle(
+    'hidden',
+    !showCategory
+  );
+
+  if (!showCategory) {
+    categorySelect.value = 'all';
+  }
+}
+
   const metricSelect = $('#metric');
 
   if (metricSelect) {
@@ -208,21 +242,10 @@ function updateAccount() {
  
   const specialAdminBtn = $('#specialAdminBtn');
   const chinaTab = $('#chinaTab');
-  const categoryTab = $('#categoryTab');
+  
   if (currentUser) {
     const plan = currentUser.plan || 'FREE';
 
-const canUseCategory =
-  plan === 'OWNER' ||
-  (
-    ['PRO', 'PRO_PLUS', 'BUSINESS'].includes(plan) &&
-    currentUser.subscription_status === 'active'
-  );
-
-categoryTab.classList.toggle(
-  'hidden',
-  !canUseCategory
-);
     
     planBadge.textContent = plan;
     planBadge.classList.toggle(
@@ -267,8 +290,8 @@ chinaTab.classList.toggle(
     
     specialAdminBtn.classList.add('hidden');
     chinaTab.classList.add('hidden');
-    categoryTab.classList.add('hidden');
   }
+  
 applyPlanControls();
 }
 
@@ -1150,11 +1173,8 @@ function scheduleLoad() {
 $('#videoTab').addEventListener('click', () => {
   rankingMode = 'video';
   $('#chinaControls').classList.add('hidden');
-  $('#category').classList.add('hidden');
-  $('#category').value = 'all';
 
   $('#videoTab').classList.add('active');
-  $('#categoryTab').classList.remove('active');
   $('#channelTab').classList.remove('active');
   $('#chinaTab').classList.remove('active');
 
@@ -1174,7 +1194,6 @@ $('#channelTab').addEventListener('click', () => {
   $('#category').classList.add('hidden');
 
   $('#channelTab').classList.add('active');
-  $('#categoryTab').classList.remove('active');
   $('#videoTab').classList.remove('active');
   $('#chinaTab').classList.remove('active');
 
@@ -1187,24 +1206,7 @@ $('#rankingDescription').textContent =
   load();
 });
 
-$('#categoryTab').addEventListener('click', () => {
-  rankingMode = 'category';
-  $('#chinaControls').classList.add('hidden');
-  $('#category').classList.remove('hidden');
 
-  $('#categoryTab').classList.add('active');
-  $('#videoTab').classList.remove('active');
-  $('#channelTab').classList.remove('active');
-  $('#chinaTab').classList.remove('active');
-
-  $('#rankingTitle').textContent =
-  '📂 카테고리 분석 랭킹';
-
-$('#rankingDescription').textContent =
-  '카테고리를 선택해 급상승 YouTube 영상을 분석합니다.';
-
-  load();
-});
 $('#chinaTab').addEventListener('click', () => {
   rankingMode = 'china';
   $('#chinaControls').classList.remove('hidden');
@@ -1215,7 +1217,7 @@ $('#chinaTab').addEventListener('click', () => {
   $('#chinaTab').classList.add('active');
   $('#videoTab').classList.remove('active');
   $('#channelTab').classList.remove('active');
-  $('#categoryTab').classList.remove('active');
+  
 
   $('#rankingTitle').textContent =
     '🇨🇳 중국 관련 콘텐츠 분석';
