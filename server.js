@@ -1615,6 +1615,19 @@ app.get('/api/channel-rankings', async (req, res) => {
   try {
     const user = await getUser(req);
     const access = getPlanAccess(user);
+
+    const requestedCategory =
+  String(req.query.category || 'all');
+
+if (
+  access.plan === 'FREE' &&
+  requestedCategory !== 'all'
+) {
+  return res.status(403).json({
+    error: '전체 카테고리 분석은 PRO 요금제 이상에서 사용할 수 있습니다.'
+  });
+}
+    
     const channelPeriods =
   ['d10', 'd1', 'd6', 'd24', 'd7']
     .filter(period =>
@@ -2241,6 +2254,17 @@ app.get('/api/rankings', async (req, res) => {
   try {
     const user = await getUser(req);
     const access = getPlanAccess(user);
+    const requestedCategory =
+  String(req.query.category || 'all');
+
+if (
+  access.plan === 'FREE' &&
+  requestedCategory !== 'all'
+) {
+  return res.status(403).json({
+    error: '전체 카테고리 분석은 PRO 요금제 이상에서 사용할 수 있습니다.'
+  });
+}
 
     const chinaOnly =
       String(req.query.china || 'false') === 'true';
