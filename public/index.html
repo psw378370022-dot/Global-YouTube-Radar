@@ -3,16 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="전 세계 YouTube 급상승 영상을 실시간에 가깝게 추적하고 조회수 상승량을 분석합니다.">
-  <title>Global YouTube Radar</title>
+  <meta
+    name="description"
+    content="세루넥(SERUNEC)은 전 세계 YouTube 공개 데이터를 활용해 급상승 영상과 채널 성장 흐름을 분석합니다."
+  >
+  <title>SERUNEC | 세루넥</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <header class="topbar">
     <div class="brand">
-      <h1>◉ Global YouTube Radar</h1>
-      <p>전 세계 YouTube 조회수 급상승 탐색기</p>
+      <h1>◉ SERUNEC</h1>
+      <p>글로벌 영상 트렌드 분석</p>
     </div>
 
     <div class="account">
@@ -21,21 +24,32 @@
 
       <button id="loginBtn" class="ghost">로그인</button>
       <button id="signupBtn">무료 회원가입</button>
+
       <button id="pricingBtn" class="ghost">
-  💳 요금제
-</button>
+        💳 요금제
+      </button>
+
       <button id="specialAdminBtn" class="ghost hidden">
-  🔐 특수회원 관리
-</button>
-      <button id="logoutBtn" class="ghost hidden">로그아웃</button>
+        🔐 특수회원 관리
+      </button>
+
+      <button id="logoutBtn" class="ghost hidden">
+        로그아웃
+      </button>
     </div>
   </header>
 
   <main>
+
     <section class="hero">
       <div>
         <span class="eyebrow">GLOBAL TREND INTELLIGENCE</span>
-        <h2>지금 가장 빠르게 뜨는<br>YouTube 영상을 찾아보세요.</h2>
+
+        <h2>
+          지금 가장 빠르게 뜨는<br>
+          YouTube 영상을 찾아보세요.
+        </h2>
+
         <p>
           국가별 급상승 영상을 추적하고
           10분 · 1시간 · 6시간 · 24시간 조회수 상승량을 비교합니다.
@@ -47,10 +61,12 @@
           <strong id="trackedCount">-</strong>
           <span>추적 영상</span>
         </div>
+
         <div>
           <strong id="countryCount">50</strong>
           <span>지원 국가</span>
         </div>
+
         <div>
           <strong>TOP 500</strong>
           <span>랭킹 분석</span>
@@ -66,6 +82,7 @@
 
     <section class="toolbar">
       <div class="controls">
+
         <select id="region">
           <option value="ALL">🌎 전 세계</option>
 
@@ -136,182 +153,256 @@
         </select>
 
         <select id="type">
-  <option value="all">전체 영상</option>
-  <option value="shorts">Shorts 추정</option>
-  <option value="long">일반 영상</option>
-</select>
+          <option value="all">전체 영상</option>
+          <option value="shorts">Shorts 추정</option>
+          <option value="long">일반 영상</option>
+        </select>
 
-<select id="category">
-  <option value="all" selected>전체 카테고리</option>
-  <option value="music">🎵 음악</option>
-  <option value="entertainment">🎭 엔터</option>
-  <option value="movie">🎬 영화</option>
-  <option value="variety">🎤 예능</option>
-  <option value="celebrity">⭐ 연예</option>
-  <option value="gaming">🎮 게임</option>
-  <option value="animation">🎞️ 애니메이션</option>
-  <option value="sports">⚽ 스포츠</option>
-  <option value="news">📰 뉴스</option>
-  <option value="economy">💰 경제</option>
-  <option value="tech">🤖 테크/AI</option>
-  <option value="education">📚 교육</option>
-  <option value="life">🏠 라이프</option>
-  <option value="beauty">💄 뷰티/패션</option>
-  <option value="food_travel">🍜 음식/여행</option>
-</select>
+        <select id="category">
+          <option value="all" selected>전체 카테고리</option>
+          <option value="music">🎵 음악</option>
+          <option value="entertainment">🎭 엔터</option>
+          <option value="movie">🎬 영화</option>
+          <option value="variety">🎤 예능</option>
+          <option value="celebrity">⭐ 연예</option>
+          <option value="gaming">🎮 게임</option>
+          <option value="animation">🎞️ 애니메이션</option>
+          <option value="sports">⚽ 스포츠</option>
+          <option value="news">📰 뉴스</option>
+          <option value="economy">💰 경제</option>
+          <option value="tech">🤖 테크/AI</option>
+          <option value="education">📚 교육</option>
+          <option value="life">🏠 라이프</option>
+          <option value="beauty">💄 뷰티/패션</option>
+          <option value="food_travel">🍜 음식/여행</option>
+        </select>
+
         <select id="metric">
-  <option value="latest">🆕 중국 최신 · OWNER</option>
-  <option value="upload_latest">🆕 업로드 최신 · OWNER</option>        
-  <option value="d10">최근 10분 상승</option>
-  <option value="d1">최근 1시간 상승</option>
-  <option value="d6">최근 6시간 상승</option>
-  <option value="d24" selected>최근 24시간 상승</option>
-  <option value="d7">최근 7일 상승</option>
-  <option value="velocity">상승 속도</option>
-</select>
-       
+          <option value="latest">🆕 중국 최신 · OWNER</option>
+          <option value="upload_latest">🆕 업로드 최신 · OWNER</option>
+          <option value="d10">최근 10분 상승</option>
+          <option value="d1">최근 1시간 상승</option>
+          <option value="d6">최근 6시간 상승</option>
+          <option value="d24" selected>최근 24시간 상승</option>
+          <option value="d7">최근 7일 상승</option>
+          <option value="velocity">상승 속도</option>
+        </select>
+
         <button
-  id="latestOrderBtn"
-  class="latest-order-btn hidden"
-  type="button"
->
-  🕒 최신순 ↓
-</button> 
-       <select id="limit">
-  <option value="100" selected>TOP 100</option>
-  <option value="200">TOP 200</option>
-  <option value="300">TOP 300</option>
-  <option value="400">TOP 400</option>
-  <option value="500">TOP 500</option>
-</select>
+          id="latestOrderBtn"
+          class="latest-order-btn hidden"
+          type="button"
+        >
+          🕒 최신순 ↓
+        </button>
+
+        <select id="limit">
+          <option value="100" selected>TOP 100</option>
+          <option value="200">TOP 200</option>
+          <option value="300">TOP 300</option>
+          <option value="400">TOP 400</option>
+          <option value="500">TOP 500</option>
+        </select>
+
         <input
           id="search"
           type="search"
           placeholder="🔎 영상 또는 채널 검색"
         >
 
-        <button id="refresh">데이터 새로고침</button>
+        <button id="refresh">
+          데이터 새로고침
+        </button>
       </div>
     </section>
 
-    <div id="status">데이터를 불러오는 중입니다…</div>
-<div class="ranking-tabs">
-  <button id="videoTab" class="ranking-tab active">🔥 영상 급상승</button>
-  <button id="channelTab" class="ranking-tab">🚀 채널 급성장</button>
-  
-  <button id="chinaTab" class="ranking-tab hidden">🇨🇳 중국 분석</button>
-</div>
+    <div id="status">
+      데이터를 불러오는 중입니다…
+    </div>
+
+    <div class="ranking-tabs">
+      <button
+        id="videoTab"
+        class="ranking-tab active"
+      >
+        🔥 영상 급상승
+      </button>
+
+      <button
+        id="channelTab"
+        class="ranking-tab"
+      >
+        🚀 채널 급성장
+      </button>
+
+      <button
+        id="chinaTab"
+        class="ranking-tab hidden"
+      >
+        🇨🇳 중국 분석
+      </button>
+    </div>
+
     <section class="ranking-head">
       <div>
-      <h3 id="rankingTitle">🔥 영상 급상승 랭킹</h3>
+        <h3 id="rankingTitle">
+          🔥 영상 급상승 랭킹
+        </h3>
+
         <p id="rankingDescription">
-  선택한 기간 동안 조회수가 빠르게 증가한 영상 순위
-</p>
+          선택한 기간 동안 조회수가 빠르게 증가한 영상 순위
+        </p>
       </div>
     </section>
-    <section id="chinaControls" class="china-controls hidden">
 
-  <select id="chinaCategory">
-    <option value="all" selected>전체 분야</option>
-    <option value="news">📰 뉴스</option>
-    <option value="drama">📺 드라마</option>
-    <option value="movie">🎬 영화</option>
-    <option value="variety">🎤 예능</option>
-    <option value="celebrity">⭐ 연예</option>
-    <option value="entertainment">🎭 엔터</option>
-    <option value="music">🎵 음악</option>
-    <option value="gaming">🎮 게임</option>
-    <option value="animation">🎞️ 애니메이션</option>
-  </select>
+    <section
+      id="chinaControls"
+      class="china-controls hidden"
+    >
 
-  <select id="chinaPlatform">
-    <option value="all" selected>전체 플랫폼</option>
-    <option value="douyin">Douyin / 抖音</option>
-    <option value="bilibili">Bilibili / 哔哩哔哩</option>
-    <option value="xiaohongshu">Xiaohongshu / 小红书</option>
-    <option value="weibo">Weibo / 微博</option>
-  </select>
+      <select id="chinaCategory">
+        <option value="all" selected>전체 분야</option>
+        <option value="news">📰 뉴스</option>
+        <option value="drama">📺 드라마</option>
+        <option value="movie">🎬 영화</option>
+        <option value="variety">🎤 예능</option>
+        <option value="celebrity">⭐ 연예</option>
+        <option value="entertainment">🎭 엔터</option>
+        <option value="music">🎵 음악</option>
+        <option value="gaming">🎮 게임</option>
+        <option value="animation">🎞️ 애니메이션</option>
+      </select>
 
-  <input
-    id="chinaSearch"
-    type="search"
-    placeholder="배우 · 가수 · 드라마 · 게임 · 키워드 검색"
-  >
+      <select id="chinaPlatform">
+        <option value="all" selected>전체 플랫폼</option>
+        <option value="douyin">Douyin / 抖音</option>
+        <option value="bilibili">Bilibili / 哔哩哔哩</option>
+        <option value="xiaohongshu">Xiaohongshu / 小红书</option>
+        <option value="weibo">Weibo / 微博</option>
+      </select>
 
-</section>
+      <input
+        id="chinaSearch"
+        type="search"
+        placeholder="배우 · 가수 · 드라마 · 게임 · 키워드 검색"
+      >
+
+    </section>
 
     <section id="list"></section>
-    <section id="channelAnalysis" class="channel-analysis hidden">
-  <div class="analysis-head">
-    <div>
-      <span class="eyebrow">CHANNEL INTELLIGENCE</span>
-      <h2 id="analysisTitle">🔎 채널 상세 분석</h2>
-      <p id="analysisDescription">
-        채널의 성장 데이터를 분석합니다.
-      </p>
-    </div>
 
-    <button id="closeAnalysis" type="button">
-      분석 닫기
-    </button>
-  </div>
+    <section
+      id="channelAnalysis"
+      class="channel-analysis hidden"
+    >
+      <div class="analysis-head">
+        <div>
+          <span class="eyebrow">
+            CHANNEL INTELLIGENCE
+          </span>
 
-  <div class="analysis-summary">
-    <div class="analysis-stat">
-      <span>총 구독자</span>
-      <strong id="analysisSubscribers">-</strong>
-    </div>
+          <h2 id="analysisTitle">
+            🔎 채널 상세 분석
+          </h2>
 
-    <div class="analysis-stat">
-      <span>총 조회수</span>
-      <strong id="analysisViews">-</strong>
-    </div>
+          <p id="analysisDescription">
+            채널의 성장 데이터를 분석합니다.
+          </p>
+        </div>
 
-    <div class="analysis-stat">
-      <span>총 영상수</span>
-      <strong id="analysisVideos">-</strong>
-    </div>
-
-    <div class="analysis-stat">
-      <span>추정 월조회수</span>
-      <strong id="analysisMonthlyViews">-</strong>
-    </div>
-
-    <div class="analysis-stat">
-      <span>추정 월수익</span>
-      <strong id="analysisRevenue">-</strong>
-    </div>
-  </div>
-
-  <div id="analysisPeriods" class="analysis-periods"></div>
-
-  <p class="analysis-note">
-    ※ 월수익은 실제 수익이 아닌 조회수 기반 추정 범위입니다.
-  </p>
-</section>
-    <section class="upgrade">
-      <div>
-        <span class="eyebrow">GLOBAL YOUTUBE RADAR PRO</span>
-        <h2>더 강력한 분석 기능을 준비하고 있습니다.</h2>
-<p>       
-  FREE는 기본 랭킹과 기본 데이터를 이용할 수 있습니다.<br>
-  PRO는 TOP 500 · 더 빠른 데이터 업데이트 · 10분/1시간 상승 분석 ·
-  고급 분석 기능을 제공할 예정입니다.
-</p>
+        <button
+          id="closeAnalysis"
+          type="button"
+        >
+          분석 닫기
+        </button>
       </div>
 
-      <button id="proBtn">PRO 준비 중</button>
+      <div class="analysis-summary">
+
+        <div class="analysis-stat">
+          <span>총 구독자</span>
+          <strong id="analysisSubscribers">-</strong>
+        </div>
+
+        <div class="analysis-stat">
+          <span>총 조회수</span>
+          <strong id="analysisViews">-</strong>
+        </div>
+
+        <div class="analysis-stat">
+          <span>총 영상수</span>
+          <strong id="analysisVideos">-</strong>
+        </div>
+
+        <div class="analysis-stat">
+          <span>추정 월조회수</span>
+          <strong id="analysisMonthlyViews">-</strong>
+        </div>
+
+        <div class="analysis-stat">
+          <span>추정 월수익</span>
+          <strong id="analysisRevenue">-</strong>
+        </div>
+
+      </div>
+
+      <div
+        id="analysisPeriods"
+        class="analysis-periods"
+      ></div>
+
+      <p class="analysis-note">
+        ※ 월수익은 실제 수익이 아닌 조회수 기반 추정 범위입니다.
+      </p>
     </section>
+
+
+    <section class="upgrade">
+      <div>
+        <span class="eyebrow">
+          SERUNEC PRO
+        </span>
+
+        <h2>
+          더 강력한 분석 기능을 준비하고 있습니다.
+        </h2>
+
+        <p>
+          FREE는 기본 랭킹과 기본 데이터를 이용할 수 있습니다.<br>
+          PRO는 TOP 500 · 더 빠른 데이터 업데이트 · 10분/1시간 상승 분석 ·
+          고급 분석 기능을 제공할 예정입니다.
+        </p>
+      </div>
+
+      <button id="proBtn">
+        PRO 준비 중
+      </button>
+    </section>
+
   </main>
 
-  <!-- 로그인 / 회원가입 -->
-  <div id="authModal" class="modal hidden">
-    <div class="modal-card">
-      <button id="closeModal" class="modal-close">×</button>
 
-      <h2 id="authTitle">로그인</h2>
+  <!-- 로그인 / 회원가입 -->
+  <div
+    id="authModal"
+    class="modal hidden"
+  >
+    <div class="modal-card">
+
+      <button
+        id="closeModal"
+        class="modal-close"
+      >
+        ×
+      </button>
+
+      <h2 id="authTitle">
+        로그인
+      </h2>
+
       <p class="modal-desc">
-        Global YouTube Radar 계정을 이용하세요.
+        세루넥 계정을 이용하세요.
       </p>
 
       <input
@@ -340,126 +431,179 @@
 
       <div id="authMessage"></div>
 
-      <button id="authSubmit" class="auth-submit">로그인</button>
+      <button
+        id="authSubmit"
+        class="auth-submit"
+      >
+        로그인
+      </button>
 
-      <button id="authSwitch" class="auth-switch">
+      <button
+        id="authSwitch"
+        class="auth-switch"
+      >
         계정이 없나요? 무료 회원가입
       </button>
+
     </div>
   </div>
-<!-- OWNER 전용 SPECIAL 회원 관리 -->
-<!-- OWNER 전용 회원 관리 -->
-<div id="specialModal" class="modal hidden">
-  <div class="modal-card owner-admin-card">
-    <button id="closeSpecialModal" class="modal-close">×</button>
 
-    <h2>🔐 OWNER 회원 관리</h2>
 
-    <p class="modal-desc">
-      회원 요금제, 구독 상태, SPECIAL 권한을 관리합니다.
-    </p>
-
-    <div class="owner-admin-section">
-      <h3>회원 조회</h3>
-
-      <input
-        id="specialEmail"
-        class="auth-field"
-        type="email"
-        placeholder="회원 이메일"
-        autocomplete="off"
-      >
+  <!-- OWNER 전용 SPECIAL 회원 관리 -->
+  <!-- OWNER 전용 회원 관리 -->
+  <div
+    id="specialModal"
+    class="modal hidden"
+  >
+    <div class="modal-card owner-admin-card">
 
       <button
-        id="ownerLookupUser"
-        class="auth-submit"
-        type="button"
+        id="closeSpecialModal"
+        class="modal-close"
       >
-        회원 조회
+        ×
       </button>
 
-      <div id="specialMessage"></div>
-    </div>
+      <h2>
+        🔐 OWNER 회원 관리
+      </h2>
 
-    <div id="ownerUserPanel" class="owner-user-panel hidden">
+      <p class="modal-desc">
+        회원 요금제, 구독 상태, SPECIAL 권한을 관리합니다.
+      </p>
 
-      <div class="owner-user-info">
-        <span>회원</span>
-        <strong id="ownerUserEmail">-</strong>
-      </div>
+      <div class="owner-admin-section">
+        <h3>
+          회원 조회
+        </h3>
 
-      <div class="owner-admin-field">
-        <label for="ownerPlanSelect">요금제</label>
+        <input
+          id="specialEmail"
+          class="auth-field"
+          type="email"
+          placeholder="회원 이메일"
+          autocomplete="off"
+        >
 
-        <select id="ownerPlanSelect" class="auth-field">
-          <option value="FREE">FREE</option>
-          <option value="PRO">PRO</option>
-          <option value="PRO_PLUS">PRO+</option>
-          <option value="BUSINESS">BUSINESS</option>
-        </select>
-      </div>
-
-      <div class="owner-admin-field">
-        <label for="ownerSubscriptionSelect">구독 상태</label>
-
-        <select id="ownerSubscriptionSelect" class="auth-field">
-          <option value="active">구독중</option>
-          <option value="inactive">미구독</option>
-        </select>
-      </div>
-
-      <button
-        id="ownerSaveUser"
-        class="auth-submit"
-        type="button"
-      >
-        요금제 · 구독 상태 저장
-      </button>
-
-      <div class="owner-special-actions">
         <button
-          id="specialEnable"
+          id="ownerLookupUser"
           class="auth-submit"
           type="button"
         >
-          SPECIAL 권한 켜기
+          회원 조회
         </button>
 
+        <div id="specialMessage"></div>
+      </div>
+
+
+      <div
+        id="ownerUserPanel"
+        class="owner-user-panel hidden"
+      >
+
+        <div class="owner-user-info">
+          <span>회원</span>
+          <strong id="ownerUserEmail">-</strong>
+        </div>
+
+        <div class="owner-admin-field">
+          <label for="ownerPlanSelect">
+            요금제
+          </label>
+
+          <select
+            id="ownerPlanSelect"
+            class="auth-field"
+          >
+            <option value="FREE">FREE</option>
+            <option value="PRO">PRO</option>
+            <option value="PRO_PLUS">PRO+</option>
+            <option value="BUSINESS">BUSINESS</option>
+          </select>
+        </div>
+
+        <div class="owner-admin-field">
+          <label for="ownerSubscriptionSelect">
+            구독 상태
+          </label>
+
+          <select
+            id="ownerSubscriptionSelect"
+            class="auth-field"
+          >
+            <option value="active">구독중</option>
+            <option value="inactive">미구독</option>
+          </select>
+        </div>
+
         <button
-          id="specialDisable"
+          id="ownerSaveUser"
+          class="auth-submit"
           type="button"
         >
-          SPECIAL 권한 해제
+          요금제 · 구독 상태 저장
         </button>
+
+        <div class="owner-special-actions">
+
+          <button
+            id="specialEnable"
+            class="auth-submit"
+            type="button"
+          >
+            SPECIAL 권한 켜기
+          </button>
+
+          <button
+            id="specialDisable"
+            type="button"
+          >
+            SPECIAL 권한 해제
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="owner-member-list-section">
+
+        <div class="owner-member-list-header">
+          <h3>
+            회원 목록
+          </h3>
+
+          <button
+            id="ownerReloadUsers"
+            type="button"
+          >
+            새로고침
+          </button>
+        </div>
+
+        <div
+          id="ownerMemberList"
+          class="owner-member-list"
+        >
+          회원 목록을 불러오면 여기에 표시됩니다.
+        </div>
+
       </div>
 
     </div>
-
-    <div class="owner-member-list-section">
-      <div class="owner-member-list-header">
-        <h3>회원 목록</h3>
-
-        <button
-          id="ownerReloadUsers"
-          type="button"
-        >
-          새로고침
-        </button>
-      </div>
-
-      <div id="ownerMemberList" class="owner-member-list">
-        회원 목록을 불러오면 여기에 표시됩니다.
-      </div>
-    </div>
-
   </div>
-</div>
-  
+
+
   <footer>
-    <strong>Global YouTube Radar</strong>
+    <strong>
+      SERUNEC · 세루넥
+    </strong>
+
     <span>
-      YouTube 공개 데이터를 활용한 트렌드 분석 서비스
+      YouTube 공개 데이터를 활용한 글로벌 영상 트렌드 분석 서비스
     </span>
+
     <small>
       Shorts 여부는 공개 API 정보에 기반한 추정값일 수 있습니다.
     </small>
