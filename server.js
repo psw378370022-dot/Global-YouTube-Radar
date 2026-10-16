@@ -2720,7 +2720,7 @@ async function start() {
 
     app.listen(port, () => {
       console.log(
-        `Global YouTube Radar running on port ${port}`
+        `SERUNEC running on port ${port}`
       );
     });
 
